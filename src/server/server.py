@@ -2,9 +2,7 @@
 
 import socketserver
 import sys
-
-
-
+import parse
 """
 HTTP Request:
 The head of request will consist of three parts:
@@ -81,16 +79,17 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     
     def handle(self):
         print("[SERVER INITIALZING]")
+        print(parse.strParser("hello"))
         # self.request is the TCP socket connected to the client
         received_data = self.request.recv(1024).strip()
-        print(self.client_address[0] + " is sending data: " )
+      #  print(self.client_address[0] + " is sending data: " )
         # print(received_data.decode('utf-8'))
-        print("The type of received data: ",type(received_data))
+      #  print("The type of received data: ",type(received_data))
         rcvd_data_string = received_data.decode('utf-8')
-        print("The type of the decode data: ",type(rcvd_data_string))
+      #  print("The type of the decode data: ",type(rcvd_data_string))
         # received data is a string of bytes, we decode to turn it into a string
-        print(rcvd_data_string)
-        print("The length of the data is :" , strParser())
+      #  print(rcvd_data_string)
+        #print("The length of the data is :" , strParser(rcvd_data_string))
         """
         Content-Length is the number of bytes not number of characters
         to get the content length correct of a utf-8 STRING, 
