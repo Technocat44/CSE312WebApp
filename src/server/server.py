@@ -3,6 +3,8 @@
 import socketserver
 import sys
 
+
+
 """
 HTTP Request:
 The head of request will consist of three parts:
@@ -88,6 +90,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print("The type of the decode data: ",type(rcvd_data_string))
         # received data is a string of bytes, we decode to turn it into a string
         print(rcvd_data_string)
+        print("The length of the data is :" , strParser())
         """
         Content-Length is the number of bytes not number of characters
         to get the content length correct of a utf-8 STRING, 
@@ -100,7 +103,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             - Content-Length is the size of the file
             - set the Content-Type to image/<image_type>
         """
-
+        sys.stdout.flush()
         # just send back the same data, but upper-cased
         #print("\n\n")
         self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
