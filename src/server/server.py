@@ -102,13 +102,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             - Content-Length is the size of the file
             - set the Content-Type to image/<image_type>
         """
-        sys.stdout.flush()
+        sys.stdout.flush() # a way to see the output in the terminal even if its buffering
+
         # just send back the same data, but upper-cased
         #print("\n\n")
         self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 8080
+    HOST, PORT = "0.0.0.0", 8080
 
     server = socketserver.ThreadingTCPServer((HOST, PORT),MyTCPHandler)
     server.serve_forever()
