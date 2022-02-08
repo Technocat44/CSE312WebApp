@@ -53,8 +53,10 @@ HTTP Response:
 
     <html>....</html>
 """
+# collect all the headers into dictionary for easy access
+headerDict = {}
 
-
+clients = []
 
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
@@ -79,17 +81,42 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     
     def handle(self):
         print("[SERVER INITIALZING]")
-        print(parse.strParser("hello"))
         # self.request is the TCP socket connected to the client
         received_data = self.request.recv(1024).strip()
-      #  print(self.client_address[0] + " is sending data: " )
-        # print(received_data.decode('utf-8'))
-      #  print("The type of received data: ",type(received_data))
-        rcvd_data_string = received_data.decode('utf-8')
-      #  print("The type of the decode data: ",type(rcvd_data_string))
+        print(self.client_address[0] + " is sending data: " )
+        clients.append(self.client_address[0])
+        #print("The type of received data: ",type(received_data))
+        decoded_received_string = received_data.decode('utf-8')
+        #print("The type of the decode data: ",type(rcvd_data_string))
         # received data is a string of bytes, we decode to turn it into a string
-      #  print(rcvd_data_string)
-        #print("The length of the data is :" , strParser(rcvd_data_string))
+     
+        raw_byte_data_list = decoded_received_string.split('\r\n')
+        request_line_string = raw_byte_data_list[0]
+        request_line_list = request_line_string.split(" ")
+       # <Request_Method> <Path> <HTTP_version>
+        request_method = request_line_list[0]
+        request_path = request_line_list[1]
+        request_version = request_line_list[2]
+
+        if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
+            respond = build200Response("text/plain", "Hello there")
+            self.request.sendall(respond.encode())
+        else: 
+            respond = build404Response("text/plain", "Page Does Not Exist")
+            self.request.sendall(respond.encode())
+            
+        
+        start = 0
+        for s in raw_byte_data_list:
+            
+            print(f"This is line {start}: ", s)
+            start+=1
+        #r = rcvd_data_string.split('\r\n')
+        # start = 0
+        # for s in r:
+        #     print(f"this is line {start}:", s)
+        #     start+=1
+        print("The length of the data via string parser :" , parse.strParser(decoded_received_string))
         """
         Content-Length is the number of bytes not number of characters
         to get the content length correct of a utf-8 STRING, 
@@ -105,8 +132,26 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         sys.stdout.flush() # a way to see the output in the terminal even if its buffering
 
         # just send back the same data, but upper-cased
-        #print("\n\n")
-        self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
+        print("\n\n")
+        #self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
+
+def build200Response(mimeType, content):
+    r = buildBasicResponse("200 OK",mimeType, content)
+    return r
+
+def build404Response(mimeType, content):
+    r = buildBasicResponse("404 Not Found", mimeType, content)
+    return r
+
+def buildBasicResponse(code, mimeType, content):
+    print("OHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
+    response = f"HTTP/1.1 {code}\r\n"
+    response += f"Content-Type: {mimeType}\r\n"
+    response += f"Content-Length: {str(len(content))}\r\n\r\n"
+    response += content
+    print(response)
+    return response
+
 
 if __name__ == "__main__":
     HOST, PORT = "0.0.0.0", 8080
@@ -114,3 +159,4 @@ if __name__ == "__main__":
     server = socketserver.ThreadingTCPServer((HOST, PORT),MyTCPHandler)
     server.serve_forever()
     # interrupt the program with Ctrl-C
+
