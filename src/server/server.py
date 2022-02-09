@@ -99,10 +99,15 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request_version = request_line_list[2]
 
         if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
-            respond = build200Response("text/plain", "Hello there")
+            respond = build200Response("text/plain; charset=utf-8", "Hello there")
+            self.request.sendall(respond.encode())
+        elif (request_method == "GET" and request_path == "/hi"):
+            print("JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ")
+            respond = build301Response("text/plain; charset=utf-8", "/hello")
+            print("THIS IS THE 301 RESPONSE\r\n", respond)
             self.request.sendall(respond.encode())
         else: 
-            respond = build404Response("text/plain", "Page Does Not Exist")
+            respond = build404Response("text/plain; charset=utf-8", "Page Does Not Exist")
             self.request.sendall(respond.encode())
             
         
@@ -142,6 +147,12 @@ def build200Response(mimeType, content):
 def build404Response(mimeType, content):
     r = buildBasicResponse("404 Not Found", mimeType, content)
     return r
+
+def build301Response(mimeType, location):
+    response = "HTTP/1.1 301 Moved Permanently\r\n"
+    response += "Content-Length: 0\r\n"
+    response += f"Location: http://localhost:8080{location}\r\n\r\n"
+    return response
 
 def buildBasicResponse(code, mimeType, content):
     print("OHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
