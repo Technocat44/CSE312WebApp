@@ -89,21 +89,33 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         decoded_received_string = received_data.decode('utf-8')
         #print("The type of the decode data: ",type(rcvd_data_string))
         # received data is a string of bytes, we decode to turn it into a string
-     
+        
         raw_byte_data_list = decoded_received_string.split('\r\n')
         request_line_string = raw_byte_data_list[0]
+      
+      #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line before splitting: {request_line_string}" )
+
         request_line_list = request_line_string.split(" ")
+      #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
        # <Request_Method> <Path> <HTTP_version>
         request_method = request_line_list[0]
         request_path = request_line_list[1]
         request_version = request_line_list[2]
 
+        print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
+        print('\n\n')
+        print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
+        print('\r\n')
+        raw_data_for_headers = decoded_received_string.split('\r\n\r\n')
+     #   print(f"GGGGGGGGGGGGGGGGGGGGGGGG This is the decoded string split on rnrn :", raw_data_for_headers)
+        buildHeaderDict(raw_data_for_headers)
+        
         if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
             respond = build200Response("text/plain; charset=utf-8", "Hello there")
             self.request.sendall(respond.encode())
         elif (request_method == "GET" and request_path == "/hi"):
             print("JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ")
-            respond = build301Response("text/plain; charset=utf-8", "/hello")
+            respond = build301Response("/hello")
             print("THIS IS THE 301 RESPONSE\r\n", respond)
             self.request.sendall(respond.encode())
         else: 
@@ -116,11 +128,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             
             print(f"This is line {start}: ", s)
             start+=1
-        #r = rcvd_data_string.split('\r\n')
-        # start = 0
-        # for s in r:
-        #     print(f"this is line {start}:", s)
-        #     start+=1
+        r = decoded_received_string.split('\r\n\r\n')
+        start = 0
+        for s in r:
+            print(f"this is line {start} of split on \\r\\n\\r\\n:\n", s)
+            start+=1
         print("The length of the data via string parser :" , parse.strParser(decoded_received_string))
         """
         Content-Length is the number of bytes not number of characters
@@ -148,7 +160,7 @@ def build404Response(mimeType, content):
     r = buildBasicResponse("404 Not Found", mimeType, content)
     return r
 
-def build301Response(mimeType, location):
+def build301Response(location):
     response = "HTTP/1.1 301 Moved Permanently\r\n"
     response += "Content-Length: 0\r\n"
     response += f"Location: http://localhost:8080{location}\r\n\r\n"
@@ -162,6 +174,10 @@ def buildBasicResponse(code, mimeType, content):
     response += content
     print(response)
     return response
+
+def buildHeaderDict(decodedSplitHeaders):
+    for data in decodedSplitHeaders:
+        print("XXXXXXXXXX from inside buildHeaderDict function:\n ",data)
 
 
 if __name__ == "__main__":
