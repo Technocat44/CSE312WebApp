@@ -54,7 +54,7 @@ HTTP Response:
     <html>....</html>
 """
 # collect all the headers into dictionary for easy access
-headerDict = {}
+
 
 clients = []
 
@@ -106,9 +106,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print('\n\n')
         print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
         print('\r\n')
-        raw_data_for_headers = decoded_received_string.split('\r\n\r\n')
      #   print(f"GGGGGGGGGGGGGGGGGGGGGGGG This is the decoded string split on rnrn :", raw_data_for_headers)
-        buildHeaderDict(raw_data_for_headers)
+        headerDict = buildHeaderDict(raw_byte_data_list)
         
         if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
             respond = build200Response("text/plain; charset=utf-8", "Hello there")
@@ -176,8 +175,27 @@ def buildBasicResponse(code, mimeType, content):
     return response
 
 def buildHeaderDict(decodedSplitHeaders):
-    for data in decodedSplitHeaders:
-        print("XXXXXXXXXX from inside buildHeaderDict function:\n ",data)
+    # example input == "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Type: text/plain; charset;utf-8\r\nx-Content-Something-Type: nosniffing\r\n\r\nWhat's up world!!"
+    print('\n\n')
+
+    # this splits the HTTP string on the CLRF and returns a list of strings. Essentially each element in the list 
+    # will be a line. The first element will be the request line, and the last element will be the body 
+    x = decodedSplitHeaders.split('\r\n') 
+    print("x ",x)
+    print('\n\n')
+    # I create a new list that contains all elements in the list except the request line var[0], the second last 
+    # element (the CLRF ''), var[-2], and the last element (the body) var[-1]. The only things left in this list are the headers 
+    e = x[1:-2]
+    print("e ",e)
+    # I loop over the headers such as:
+    #           'Content-Length: 5'
+    # and I split each line on the colon. I create the first part of that line to be the key, and I 
+    # assign the second part of the line as the value and I strip the line of any leading whitespace
+    newHeaderDict = {}
+    for line in e:
+        t = line.split(":")
+        newHeaderDict[t[0]] = t[1].strip(' ')
+    return newHeaderDict
 
 
 if __name__ == "__main__":
