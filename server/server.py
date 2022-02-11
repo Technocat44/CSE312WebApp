@@ -4,9 +4,12 @@ import socketserver
 import sys
 import test
 import os
+import parse
+import osHandlers
 
 test.sayHello()
-
+gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
+print(gh)
 """
 HTTP Request:
 The head of request will consist of three parts:
@@ -108,18 +111,25 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request_path = request_line_list[1]
         request_version = request_line_list[2]
 
-        print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
+        # print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
         print('\n\n')
-        print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
+        # print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
         print('\r\n')
      #   print(f"GGGGGGGGGGGGGGGGGGGGGGGG This is the decoded string split on rnrn :", raw_data_for_headers)
-        headerDict = buildHeaderDict(raw_byte_data_list)
-        print("******************************** This is headerDict", headerDict)
-        useragent = headerDict['User-Agent']
-        print("the value of useragent from the headerDict" , useragent)
+        headerDict = parse.buildHeaderDict(raw_byte_data_list)
+        # print("******************************** This is headerDict", headerDict)
+        # useragent = headerDict['User-Agent']
+        # print("the value of useragent from the headerDict" , useragent)
         
-        if (request_path == "/"):
-            response = build200Response("text/plain; charset=utf-8",)
+        if (request_method == "GET" and request_path == "/"):
+            respond = buildHTMLResponse(request_version)
+            self.request.sendall(respond.encode())
+        if (request_method == "GET" and request_path == "/style.css"):
+            return 0
+        if (request_method == "GET" and request_path == "/function.js"):
+            return 0
+        if (request_method == "GET" and request_path == "/image"):
+            return 0
         if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
             respond = build200Response("text/plain; charset=utf-8", "Hello there")
             self.request.sendall(respond.encode())
@@ -138,11 +148,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             
             print(f"This is line {start}: ", s)
             start+=1
-        r = decoded_received_string.split('\r\n\r\n')
-        start = 0
-        for s in r:
-            print(f"this is line {start} of split on \\r\\n\\r\\n:\n", s)
-            start+=1
+        # r = decoded_received_string.split('\r\n\r\n')
+        # start = 0
+        # for s in r:
+        #     print(f"this is line {start} of split on \\r\\n\\r\\n:\n", s)
+        #     start+=1
         print("The length of the data via string parser :" , parse.strParser(decoded_received_string))
         """
         Content-Length is the number of bytes not number of characters
@@ -162,6 +172,21 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print("\n\n")
         #self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
 
+
+def buildHTMLResponse(reqVer):
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + "/CSE312WebApp/static/index.html"))) as f:
+        serve = f.read()
+        print(serve)
+        print("Content-Length: ", len(serve))
+
+    response = reqVer + "200 OK\r\n"
+    response += f"Content-Length: {str(len(serve))}\r\n"
+    response += "X-Content-Type-Options: nosniff\r\n"
+    response += "Content-Type: text/html\r\n"
+    response += '\r\n'
+    response += serve
+    return response
+
 def build200Response(mimeType, content):
     r = buildBasicResponse("200 OK",mimeType, content)
     return r
@@ -173,54 +198,21 @@ def build404Response(mimeType, content):
 def build301Response(location):
     response = "HTTP/1.1 301 Moved Permanently\r\n"
     response += "Content-Length: 0\r\n"
-    response += f"Location: http://localhost:8080{location}\r\n\r\n"
+    response += f"Location: http://0.0.0.0:8080{location}\r\n\r\n"
     return response
 
 def buildBasicResponse(code, mimeType, content):
     print("OHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
     response = f"HTTP/1.1 {code}\r\n"
     response += f"Content-Type: {mimeType}\r\n"
-    response += f"Content-Length: {str(len(content))}\r\n\r\n"
+    response += "X-Content-Type-Options: nosniff\r\n"
+    response += f"Content-Length: {str(len(content))}\r\n"
+    response += "\r\n"
     response += content
     print(response)
     return response
 
-""" 
-This function takes in a HTTP request decoded string and returns a dictionary with key-value pairs. 
-The keys are the HTTP headers 
-The values are the values of the headers.
-    Example:
-        key - Content-Length
-        value - 5
-"""
-def buildHeaderDict(decodedSplitHeaders):
-    # example input == "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Type: text/plain; charset;utf-8\r\nx-Content-Something-Type: nosniffing\r\n\r\nWhat's up world!!"
-    print('\n\n')
 
-    # the input is a list that was split on \r\n. Essentially each element in the list 
-    # will be a line. The first element will be the request line, and the last element will be the body 
-
-    # I create a new list that contains all elements in the list except the request line var[0], the second last 
-    # element (the CLRF ''), var[-2], and the last element (the body) var[-1]. The only things left in this list are the headers 
-    #e = decodedSplitHeaders[1:-2]
-    e = decodedSplitHeaders[1:]
-    print("e ",e)
-    # I loop over the headers such as:
-    #           'Content-Length: 5'
-    # and I split each line on the colon. I create the first part of that line to be the key, and I 
-    # assign the second part of the line as the value and I strip the line of any leading whitespace
-    newHeaderDict = {}
-    # for line in e:
-    #     t = line.split(":")
-    #     newHeaderDict[t[0]] = t[1].strip(' ')
-    # return newHeaderDict
-    for s in e:
-        if s == '':
-            break
-        else:
-            t = s.split(':')
-            newHeaderDict[t[0]] = t[1].strip(' ')
-    return newHeaderDict
 
 if __name__ == "__main__":
     HOST, PORT = "0.0.0.0", 8080
