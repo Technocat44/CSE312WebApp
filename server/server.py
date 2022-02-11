@@ -2,7 +2,11 @@
 
 import socketserver
 import sys
-import parse
+import test
+import os
+
+test.sayHello()
+
 """
 HTTP Request:
 The head of request will consist of three parts:
@@ -85,6 +89,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         received_data = self.request.recv(1024).strip()
         print(self.client_address[0] + " is sending data: " )
         clients.append(self.client_address[0])
+
+        
         #print("The type of received data: ",type(received_data))
         decoded_received_string = received_data.decode('utf-8')
         #print("The type of the decode data: ",type(rcvd_data_string))
@@ -108,7 +114,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print('\r\n')
      #   print(f"GGGGGGGGGGGGGGGGGGGGGGGG This is the decoded string split on rnrn :", raw_data_for_headers)
         headerDict = buildHeaderDict(raw_byte_data_list)
+        print("******************************** This is headerDict", headerDict)
+        useragent = headerDict['User-Agent']
+        print("the value of useragent from the headerDict" , useragent)
         
+        if (request_path == "/"):
+            response = build200Response("text/plain; charset=utf-8",)
         if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
             respond = build200Response("text/plain; charset=utf-8", "Hello there")
             self.request.sendall(respond.encode())
@@ -174,34 +185,48 @@ def buildBasicResponse(code, mimeType, content):
     print(response)
     return response
 
+""" 
+This function takes in a HTTP request decoded string and returns a dictionary with key-value pairs. 
+The keys are the HTTP headers 
+The values are the values of the headers.
+    Example:
+        key - Content-Length
+        value - 5
+"""
 def buildHeaderDict(decodedSplitHeaders):
     # example input == "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Type: text/plain; charset;utf-8\r\nx-Content-Something-Type: nosniffing\r\n\r\nWhat's up world!!"
     print('\n\n')
 
-    # this splits the HTTP string on the CLRF and returns a list of strings. Essentially each element in the list 
+    # the input is a list that was split on \r\n. Essentially each element in the list 
     # will be a line. The first element will be the request line, and the last element will be the body 
-    x = decodedSplitHeaders.split('\r\n') 
-    print("x ",x)
-    print('\n\n')
+
     # I create a new list that contains all elements in the list except the request line var[0], the second last 
     # element (the CLRF ''), var[-2], and the last element (the body) var[-1]. The only things left in this list are the headers 
-    e = x[1:-2]
+    #e = decodedSplitHeaders[1:-2]
+    e = decodedSplitHeaders[1:]
     print("e ",e)
     # I loop over the headers such as:
     #           'Content-Length: 5'
     # and I split each line on the colon. I create the first part of that line to be the key, and I 
     # assign the second part of the line as the value and I strip the line of any leading whitespace
     newHeaderDict = {}
-    for line in e:
-        t = line.split(":")
-        newHeaderDict[t[0]] = t[1].strip(' ')
+    # for line in e:
+    #     t = line.split(":")
+    #     newHeaderDict[t[0]] = t[1].strip(' ')
+    # return newHeaderDict
+    for s in e:
+        if s == '':
+            break
+        else:
+            t = s.split(':')
+            newHeaderDict[t[0]] = t[1].strip(' ')
     return newHeaderDict
-
 
 if __name__ == "__main__":
     HOST, PORT = "0.0.0.0", 8080
 
     server = socketserver.ThreadingTCPServer((HOST, PORT),MyTCPHandler)
     server.serve_forever()
+    
     # interrupt the program with Ctrl-C
 
