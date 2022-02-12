@@ -128,31 +128,29 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             start+=1
 
         if (request_method == "GET" and request_path == "/"):
-            respond = buildNonASCIIResponse(request_version, "text/html", "index.html")
+            respond = buildNonASCIIResponse("text/html; charset=utf-8", "index.html")
             self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/style.css"):
-            respond = buildHTMLResponse(request_version,"text/css", "style.css" )
-            self.request.sendall(respond.encode())   # TODO: not sure if I can use charset-8 for a css file
+            respond = buildHTMLResponse("text/css; charset=utf-8 ", "style.css" )
+            self.request.sendall(respond.encode())  
         if (request_method == "GET" and request_path == "/functions.js"):
-            respond = buildNonASCIIResponse(request_version, "application/javascript", "functions.js")
+            respond = buildNonASCIIResponse("application/javascript; charset=utf-8", "functions.js")
             self.request.sendall(respond)
         if (request_method == "GET" and request_path.startswith("/image")):
             extension = request_path.split("/")
             fullNameOfFile = extension[-1].split(".")
             nameOfFile = fullNameOfFile[0]
             filetype = fullNameOfFile[1]
-            if filetype == "jpg":
-                filetype = "jpeg"
+            # if filetype == "jpg":
+            #     filetype = "jpeg"
             # I am getting the file type so I know how to set the mimetype
-            response = buildNonASCIIResponse(request_method, f"image/{filetype}", "image/"+extension[-1])
+            response = buildNonASCIIResponse(f"image/{filetype}", "image/"+extension[-1])
             self.request.sendall(response)
-        if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
+        if (request_method == "GET" and request_path == "/hello") :
             respond = build200Response("text/plain; charset=utf-8", "Hello there")
             self.request.sendall(respond.encode())
-        elif (request_method == "GET" and request_path == "/hi"):
-            print("JJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJ")
+        if (request_method == "GET" and request_path == "/hi"):
             respond = build301Response("/hello")
-            print("THIS IS THE 301 RESPONSE\r\n", respond)
             self.request.sendall(respond.encode())
         else: 
             respond = build404Response("text/plain; charset=utf-8", "Page Does Not Exist")
@@ -185,13 +183,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
 
 
-def buildHTMLResponse(reqVer, mimetype, fileName):
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{fileName}"))) as f:# TODO: for images us "rb"
+def buildHTMLResponse(mimetype, fileName):
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{fileName}"))) as f:
         serve = f.read()
         print(serve)
         print("Content-Length:", len(serve))
 
-    response = reqVer + " 200 OK\r\n"
+    response = "HTTP/1.1 200 OK\r\n"
     response += f"Content-Length: {str(len(serve))}\r\n"
     response += "X-Content-Type-Options: nosniff\r\n"
     response += f"Content-Type: {mimetype}; charset=utf-8\r\n"  
@@ -201,24 +199,19 @@ def buildHTMLResponse(reqVer, mimetype, fileName):
     # print("From the HTML response\n")
     return response
 
-def buildNonASCIIResponse(reqVer, mimetype, filename):
-    print("reqVer, ",reqVer)
+def buildNonASCIIResponse(mimetype, filename):
     print("mimetype, ",mimetype)
     print("filename, ", filename)
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{filename}")), "rb") as b:
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{filename}")), "rb") as b: # TODO: for images us "rb"
         serveBytes = b.read()
         print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
-      #  print(serveBytes)
-        print(type(serveBytes))
-    r = reqVer + "200 OK\r\n"
+    r = "HTTP/1.1 200 OK\r\n"
     r += f"Content-Length: {str(len(serveBytes))}\r\n"
     r += "X-Content-Type-Options: nosniff\r\n"
-    r += f"Content-Type: {mimetype}; charset=utf-8\r\n"  
+    r += f"Content-Type: {mimetype}\r\n"  
     r += '\r\n'
     r = r.encode()
-    r += serveBytes
-    print(type(r))
-    print('\n\n')
+    r += serveBytes    
     return r
 
 
@@ -234,7 +227,7 @@ def build404Response(mimeType, content):
 def build301Response(location):
     response = "HTTP/1.1 301 Moved Permanently\r\n"
     response += "Content-Length: 0\r\n"
-    response += f"Location: http://0.0.0.0:8080{location}\r\n\r\n"
+    response += f"Location: http://localhost:8080{location}\r\n\r\n"
     return response
 
 def buildBasicResponse(code, mimeType, content):
@@ -245,13 +238,12 @@ def buildBasicResponse(code, mimeType, content):
     response += f"Content-Length: {str(len(content))}\r\n"
     response += "\r\n"
     response += content
-    #print(response)
     return response
 
 
 
 if __name__ == "__main__":
-    HOST, PORT = "0.0.0.0", 8080
+    HOST, PORT = "localhost", 8080
 
     server = socketserver.ThreadingTCPServer((HOST, PORT),MyTCPHandler)
     server.serve_forever()
