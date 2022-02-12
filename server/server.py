@@ -182,7 +182,7 @@ def buildHTMLResponse(reqVer):
     response = reqVer + "200 OK\r\n"
     response += f"Content-Length: {str(len(serve))}\r\n"
     response += "X-Content-Type-Options: nosniff\r\n"
-    response += "Content-Type: text/html\r\n"
+    response += "Content-Type: text/html; charset=utf-8\r\n"
     response += '\r\n'
     response += serve
     return response

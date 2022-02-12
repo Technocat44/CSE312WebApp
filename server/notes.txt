@@ -1,0 +1,164 @@
+Docker:
+
+After installing Docker, build a Dockerfile
+
+A Dockerfile contains all the instructions needed to build a Docker image. 
+Similar to a Makefile
+
+To build a container, the image is a like a class
+and the container is like an object. We use images to create containers
+
+Dockerfile -> image -> container 
+
+At the end of writing a Dockerfile use CMD to run you app. 
+Important: Do not use RUN to run your app! 
+RUN will execute the command when the image is being built
+CMD will execute when the container is ran. 
+We do not want the app to run when the image is being built
+
+Once the Dockerfile is written we can build the image. And then 
+when we create a container based on that image, thats when CMD is ran.
+CMD doesn't run when the image is being built, it runs when the container
+is being ran. 
+
+Once you have the image run this line in the command line to create and run
+a container:
+    docker run -p <local_port>:8000<image_name>
+This part:
+    -p <local_port>:8000
+maps a port on the host machine to an exposed port in the container. 
+We are going to use port 8080 as the local_port. 
+Whenever my laptop gets a request for port 8080, Docker has control of
+that port and will recognize that it is a message for this containers
+port 8000. Then it will talk to that containers port 8000 which will end
+uo tapping into my app.
+<image_name> matches the image name chosen when you created the image.
+
+Adding a -d before the image name like this:
+    docker run -p <local_port>:8000 -d <image_name>
+will run the app in the background and it just runs forever until we
+stop the container. This is used for production, not usually used in 
+development when implementing featrues. 
+
+After you run it, we should be able to go to our browser localhost/8080
+and our app should pop up. 
+
+
+
+
+Docker Compose
+
+We need a way to run both the app and the database. App and databases are
+2 seperate processes. We'll use docker-compose to run both in separate
+containers. 
+Must install docker-compose first.
+
+docker-compose.yml file. 
+White-space matters!
+
+see slides 2/11 for more info
+
+example:
+version: '3.3'
+services:
+    mongo:
+        image: mongo:4.2.5
+    app:
+        build .
+        environment:
+            WAIT_HOSTS: mongo:27017
+        ports:
+            - '8080:8000'
+
+- services
+    this section list all of the services for docker compose to run.
+    a docker container is created for each service. 
+    In this example we will build two docker images and
+    two containers that will be built and run the mongo db and the app. 
+
+    Name each service, these names are going to be the host names for each
+    container. WE named the one container mongo, when we connect instead of 
+    using local host, we use mongo. That's the host name, and how multiple
+    docker containers can communicate with each other through docker-compose
+
+    If our database needs to talk to the app, we would connect to the app
+    instead of localhost or 0.0.0.0, etc. We connect to the name of the 
+    service. Docker-compose handles the routing. 
+
+    Each service will be an image.
+    mongo doesn't need a dockerfile to run
+
+    app does use a dockerfile. and we need to specify the directory where
+    the docker file can be found.  
+    If docker compose and docker are in the same file as the app we can use
+    a . for the build value.
+- environment: 
+    if we want to set any environment variables. We need to set WAIT_HOSTS
+    This tells our app to wait until the database is running before 
+    connecting to it.  
+    Docker-compose it going to stat your database and start your app. 
+    The database will take a while to spin up. The app will try to 
+    connect fast, but the db wont be ready and it wont connect. 
+    There are a few lines of code we add to our dockerfile (not docker-compose)
+    (see slides from 2/11) 
+    This essentially makes the app wait until the database is up and running
+    and then when it is the app runs. 
+-ports:
+    map a local port to a container port. - '8080:8000'
+
+********
+IMPORTANT!
+    Recall how we chose names for each service, mongo & app.
+    when connecting to the database in your app, the service name is 
+    the hostname for the container!!! 
+
+    ex: mongo_client = MongoClient('mongo')
+********
+
+• To run your app (and database)
+     docker-compose up
+• To run in detached mode (deployment mode)
+     docker-compose up -d 
+• To rebuild the containers
+     docker-compose build
+     docker-compose up --build (rebuild images and run containers)
+• To restart the containers
+     docker-compose restart
+
+    
+
+
+
+Databases
+
+MongoDB 
+Runs on port 27017.
+A document-based database on unstructered structure similar to JSON. 
+Insert dictionaries directly. Each dictionary is stored in a collection.
+
+Download a connection library and use to establish a connection with MongoDB.
+
+MongoDB is separated into several layers. 
+Databases - named by strings; contains collections
+Collections - Where the data is stored, similar to a SQL table
+Access your collections to insert/retrieve/update/delete data. 
+
+*If your language does not have a comparable data structure to a dictionary 
+its more work to prepare the data for MongoDB. Luckily python is great.
+
+To see commands for MongoDB see slides from 2/11
+
+MongoDB is best for prototyping when the structure of your data is 
+constantly changing because you don't always know how to structure the 
+data. 
+
+When you do know, use MySQL because it is much faster and very efficient. 
+
+You're expected to find documentation/tutorials for your database and 
+language of choice
+• Choose a database
+• Find a connection library for that database in your language
+• Add the library to your dependancies
+• Make sure you install it in your Dockerfile
+• Study documentation to learn how to use the database
+
