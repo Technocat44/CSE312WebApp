@@ -110,7 +110,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request_method = request_line_list[0]
         request_path = request_line_list[1]
         request_version = request_line_list[2]
-
+        print("REQUEST PATHHHHHHHH", request_path)
         # print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
         print('\n\n')
         # print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
@@ -120,16 +120,32 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # print("******************************** This is headerDict", headerDict)
         # useragent = headerDict['User-Agent']
         # print("the value of useragent from the headerDict" , useragent)
-        
+        start = 0
+        print("FROM the request/client\n")
+        for s in raw_byte_data_list:
+            
+            print(f"This is line {start}: ", s)
+            start+=1
+
         if (request_method == "GET" and request_path == "/"):
-            respond = buildHTMLResponse(request_version)
-            self.request.sendall(respond.encode())
+            respond = buildNonASCIIResponse(request_version, "text/html", "index.html")
+            self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/style.css"):
-            return 0
-        if (request_method == "GET" and request_path == "/function.js"):
-            return 0
-        if (request_method == "GET" and request_path == "/image"):
-            return 0
+            respond = buildHTMLResponse(request_version,"text/css", "style.css" )
+            self.request.sendall(respond.encode())   # TODO: not sure if I can use charset-8 for a css file
+        if (request_method == "GET" and request_path == "/functions.js"):
+            respond = buildNonASCIIResponse(request_version, "application/javascript", "functions.js")
+            self.request.sendall(respond)
+        if (request_method == "GET" and request_path.startswith("/image")):
+            extension = request_path.split("/")
+            fullNameOfFile = extension[-1].split(".")
+            nameOfFile = fullNameOfFile[0]
+            filetype = fullNameOfFile[1]
+            if filetype == "jpg":
+                filetype = "jpeg"
+            # I am getting the file type so I know how to set the mimetype
+            response = buildNonASCIIResponse(request_method, f"image/{filetype}", "image/"+extension[-1])
+            self.request.sendall(response)
         if (request_method == "GET" and (request_path == "/hello" or request_path == "/")) :
             respond = build200Response("text/plain; charset=utf-8", "Hello there")
             self.request.sendall(respond.encode())
@@ -143,17 +159,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             self.request.sendall(respond.encode())
             
         
-        start = 0
-        for s in raw_byte_data_list:
-            
-            print(f"This is line {start}: ", s)
-            start+=1
+       
         # r = decoded_received_string.split('\r\n\r\n')
         # start = 0
         # for s in r:
         #     print(f"this is line {start} of split on \\r\\n\\r\\n:\n", s)
         #     start+=1
-        print("The length of the data via string parser :" , parse.strParser(decoded_received_string))
+        # print("The length of the data via string parser :" , parse.strParser(decoded_received_string))
         """
         Content-Length is the number of bytes not number of characters
         to get the content length correct of a utf-8 STRING, 
@@ -173,19 +185,43 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
 
 
-def buildHTMLResponse(reqVer):
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + "/CSE312WebApp/static/index.html"))) as f:
+def buildHTMLResponse(reqVer, mimetype, fileName):
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{fileName}"))) as f:# TODO: for images us "rb"
         serve = f.read()
         print(serve)
-        print("Content-Length: ", len(serve))
+        print("Content-Length:", len(serve))
 
-    response = reqVer + "200 OK\r\n"
+    response = reqVer + " 200 OK\r\n"
     response += f"Content-Length: {str(len(serve))}\r\n"
     response += "X-Content-Type-Options: nosniff\r\n"
-    response += "Content-Type: text/html; charset=utf-8\r\n"
+    response += f"Content-Type: {mimetype}; charset=utf-8\r\n"  
     response += '\r\n'
     response += serve
+    # print(response)
+    # print("From the HTML response\n")
     return response
+
+def buildNonASCIIResponse(reqVer, mimetype, filename):
+    print("reqVer, ",reqVer)
+    print("mimetype, ",mimetype)
+    print("filename, ", filename)
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{filename}")), "rb") as b:
+        serveBytes = b.read()
+        print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
+      #  print(serveBytes)
+        print(type(serveBytes))
+    r = reqVer + "200 OK\r\n"
+    r += f"Content-Length: {str(len(serveBytes))}\r\n"
+    r += "X-Content-Type-Options: nosniff\r\n"
+    r += f"Content-Type: {mimetype}; charset=utf-8\r\n"  
+    r += '\r\n'
+    r = r.encode()
+    r += serveBytes
+    print(type(r))
+    print('\n\n')
+    return r
+
+
 
 def build200Response(mimeType, content):
     r = buildBasicResponse("200 OK",mimeType, content)
@@ -209,7 +245,7 @@ def buildBasicResponse(code, mimeType, content):
     response += f"Content-Length: {str(len(content))}\r\n"
     response += "\r\n"
     response += content
-    print(response)
+    #print(response)
     return response
 
 
