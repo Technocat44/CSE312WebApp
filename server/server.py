@@ -184,7 +184,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
 
 def buildHTMLResponse(mimetype, fileName):
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{fileName}"))) as f:
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/static/{fileName}"))) as f:
         serve = f.read()
         print(serve)
         print("Content-Length:", len(serve))
@@ -202,7 +202,7 @@ def buildHTMLResponse(mimetype, fileName):
 def buildNonASCIIResponse(mimetype, filename):
     print("mimetype, ",mimetype)
     print("filename, ", filename)
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/CSE312WebApp/static/{filename}")), "rb") as b: # TODO: for images us "rb"
+    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/static/{filename}")), "rb") as b: # TODO: for images us "rb"
         serveBytes = b.read()
         print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
     r = "HTTP/1.1 200 OK\r\n"
@@ -243,7 +243,7 @@ def buildBasicResponse(code, mimeType, content):
 
 
 if __name__ == "__main__":
-    HOST, PORT = "localhost", 8080
+    HOST, PORT = "0.0.0.0", 8080
 
     server = socketserver.ThreadingTCPServer((HOST, PORT),MyTCPHandler)
     server.serve_forever()
