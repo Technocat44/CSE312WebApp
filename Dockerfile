@@ -1,11 +1,13 @@
 # this is the base image 
 FROM python:3
 
+ENV HOME /root
+WORKDIR /root
 COPY requirements.txt ./
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install -r requirements.txt
 
 COPY . .
 
 EXPOSE 8000
 
-CMD [ "python3", "server/server.py"]
+CMD [ "python3", "server/server.py", "--host=0.0.0.0"]
