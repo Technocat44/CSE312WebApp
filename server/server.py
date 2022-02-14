@@ -6,6 +6,7 @@ import test
 import os
 import parse
 import osHandlers
+import buildResponse
 # I am testing out WSL and git
 test.sayHello()
 gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
@@ -128,13 +129,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             start+=1
 
         if (request_method == "GET" and request_path == "/"):
-            respond = buildNonASCIIResponse("text/html; charset=utf-8", "index.html")
+            respond = buildResponse.buildNonASCIIResponse("text/html; charset=utf-8", "index.html")
             self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/style.css"):
-            respond = buildHTMLResponse("text/css; charset=utf-8 ", "style.css" )
+            respond = buildResponse.buildHTMLResponse("text/css; charset=utf-8 ", "style.css" )
             self.request.sendall(respond.encode())  
         if (request_method == "GET" and request_path == "/functions.js"):
-            respond = buildNonASCIIResponse("application/javascript; charset=utf-8", "functions.js")
+            respond = buildResponse.buildNonASCIIResponse("application/javascript; charset=utf-8", "functions.js")
             self.request.sendall(respond)
         if (request_method == "GET" and request_path.startswith("/image")):
             extension = request_path.split("/")
@@ -144,16 +145,16 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             # if filetype == "jpg":
             #     filetype = "jpeg"
             # I am getting the file type so I know how to set the mimetype
-            response = buildNonASCIIResponse(f"image/{filetype}", "image/"+extension[-1])
+            response = buildResponse.buildNonASCIIResponse(f"image/{filetype}", "image/"+extension[-1])
             self.request.sendall(response)
         if (request_method == "GET" and request_path == "/hello") :
-            respond = build200Response("text/plain; charset=utf-8", "Hello there")
+            respond = buildResponse.build200Response("text/plain; charset=utf-8", "Hello there")
             self.request.sendall(respond.encode())
         if (request_method == "GET" and request_path == "/hi"):
-            respond = build301Response("/hello")
+            respond = buildResponse.build301Response("/hello")
             self.request.sendall(respond.encode())
         else: 
-            respond = build404Response("text/plain; charset=utf-8", "Page Does Not Exist")
+            respond = buildResponse.build404Response("text/plain; charset=utf-8", "Page Does Not Exist")
             self.request.sendall(respond.encode())
             
         
@@ -181,65 +182,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # just send back the same data, but upper-cased
         print("\n\n")
         #self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
-
-
-def buildHTMLResponse(mimetype, fileName):
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/static/{fileName}"))) as f:
-        serve = f.read()
-        print(serve)
-        print("Content-Length:", len(serve))
-
-    response = "HTTP/1.1 200 OK\r\n"
-    response += f"Content-Length: {str(len(serve))}\r\n"
-    response += "X-Content-Type-Options: nosniff\r\n"
-    response += f"Content-Type: {mimetype}; charset=utf-8\r\n"  
-    response += '\r\n'
-    response += serve
-    # print(response)
-    # print("From the HTML response\n")
-    return response
-
-def buildNonASCIIResponse(mimetype, filename):
-    print("mimetype, ",mimetype)
-    print("filename, ", filename)
-    with open(os.path.join(osHandlers.addForwardSlash(os.getcwd() + f"/static/{filename}")), "rb") as b: # TODO: for images us "rb"
-        serveBytes = b.read()
-        print('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')
-    r = "HTTP/1.1 200 OK\r\n"
-    r += f"Content-Length: {str(len(serveBytes))}\r\n"
-    r += "X-Content-Type-Options: nosniff\r\n"
-    r += f"Content-Type: {mimetype}\r\n"  
-    r += '\r\n'
-    r = r.encode()
-    r += serveBytes    
-    return r
-
-
-
-def build200Response(mimeType, content):
-    r = buildBasicResponse("200 OK",mimeType, content)
-    return r
-
-def build404Response(mimeType, content):
-    r = buildBasicResponse("404 Not Found", mimeType, content)
-    return r
-
-def build301Response(location):
-    response = "HTTP/1.1 301 Moved Permanently\r\n"
-    response += "Content-Length: 0\r\n"
-    response += f"Location: http://localhost:8080{location}\r\n\r\n"
-    return response
-
-def buildBasicResponse(code, mimeType, content):
-    print("OHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
-    response = f"HTTP/1.1 {code}\r\n"
-    response += f"Content-Type: {mimeType}\r\n"
-    response += "X-Content-Type-Options: nosniff\r\n"
-    response += f"Content-Length: {str(len(content))}\r\n"
-    response += "\r\n"
-    response += content
-    return response
-
 
 
 if __name__ == "__main__":
