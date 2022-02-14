@@ -6,7 +6,7 @@ import test
 import os
 import parse
 import osHandlers
-
+# I am testing out WSL and git
 test.sayHello()
 gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
 print(gh)
@@ -93,7 +93,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(self.client_address[0] + " is sending data: " )
         clients.append(self.client_address[0])
 
-        
+              
         #print("The type of received data: ",type(received_data))
         decoded_received_string = received_data.decode('utf-8')
         #print("The type of the decode data: ",type(rcvd_data_string))
@@ -103,10 +103,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request_line_string = raw_byte_data_list[0]
       
       #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line before splitting: {request_line_string}" )
-
+    
         request_line_list = request_line_string.split(" ")
       #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
-       # <Request_Method> <Path> <HTTP_version>
+       # <Request_Method> <Path> <HTTP_version>#  ffff
         request_method = request_line_list[0]
         request_path = request_line_list[1]
         request_version = request_line_list[2]

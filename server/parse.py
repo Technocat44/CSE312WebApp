@@ -2,8 +2,8 @@
 # There is some important module os functions in here
 def strParser(a):
     return len(a)
-
-""" 
+###h
+"""    
 This function takes in a HTTP request decoded string and returns a dictionary with key-value pairs. 
 The keys are the HTTP headers 
 The values are the values of the headers.
