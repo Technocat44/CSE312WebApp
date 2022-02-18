@@ -1,0 +1,13 @@
+version: '3.3'
+services: 
+  mysql:
+    # table name = users
+    image: mysql:latest 
+  app:
+    build: .
+    env_file:
+      - .env
+    environment: 
+      WAIT_HOST: mysql:3306
+    ports:
+      - '8080:8000'

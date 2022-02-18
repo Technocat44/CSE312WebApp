@@ -11,4 +11,7 @@ COPY . .
 
 EXPOSE 8000
 
-CMD [ "python3", "server/server.py", "--host=0.0.0.0"]
+ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.2.1/wait /wait
+RUN chmod +x /wait
+
+CMD [ "/wait", "python3", "server/server.py", "--host=0.0.0.0"]

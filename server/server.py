@@ -1,5 +1,6 @@
 # reference https://docs.python.org/3/library/socketserver.html?highlight=requesthandlerclass
 
+
 import socketserver
 import sys
 import test
@@ -12,7 +13,6 @@ test.sayHello()
 gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
 print(gh)
 """
-HTTP Request:
 The head of request will consist of three parts:
     1. A request line 
         <Request_Method> <Path> <HTTP_version>
