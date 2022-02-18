@@ -1,13 +1,19 @@
-version: '3.3'
-services: 
+version: "3.3"
+services:
   mysql:
     # table name = users
-    image: mysql:latest 
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PW}"
+      MYSQL_USER: "${DB_USER}"
+      MYSQL_PASSWORD: "${DB_PW}"
+      MYSQL_DATABASE: "${DB_NAME}"
+
   app:
     build: .
     env_file:
       - .env
-    environment: 
+    environment:
       WAIT_HOST: mysql:3306
     ports:
-      - '8080:8000'
+      - "8080:8000"
