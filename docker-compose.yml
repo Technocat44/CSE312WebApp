@@ -8,7 +8,7 @@ services:
       MYSQL_USER: "${DB_USER}"
       MYSQL_PASSWORD: "${DB_PW}"
       MYSQL_DATABASE: "${DB_NAME}"
-
+  
   app:
     build: .
     env_file:
@@ -16,4 +16,4 @@ services:
     environment:
       WAIT_HOST: mysql:3306
     ports:
-      - "8080:8000"
+      - "8080:8080"
