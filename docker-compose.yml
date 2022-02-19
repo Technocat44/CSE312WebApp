@@ -1,19 +1,11 @@
 version: "3.3"
 services:
-  mysql:
-    # table name = users
-    image: mysql:latest
-    environment:
-      MYSQL_ROOT_PASSWORD: "${DB_ROOT_PW}"
-      MYSQL_USER: "${DB_USER}"
-      MYSQL_PASSWORD: "${DB_PW}"
-      MYSQL_DATABASE: "${DB_NAME}"
-  
+  mongo:
+    image: mongo:latest
   app:
     build: .
-    env_file:
-      - .env
+    restart: always
     environment:
-      WAIT_HOST: mysql:3306
+      WAIT_HOST: mongo:27017
     ports:
       - "8080:8080"
