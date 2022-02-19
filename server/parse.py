@@ -1,7 +1,6 @@
 # This is going to be my parsing file
 # There is some important module os functions in here
-def strParser(a):
-    return len(a)
+
 ###h
 """    
 This function takes in a HTTP request decoded string and returns a dictionary with key-value pairs. 
@@ -23,15 +22,17 @@ def buildHeaderDict(decodedSplitHeaders):
     #e = decodedSplitHeaders[1:-2]
     e = decodedSplitHeaders[1:]
     # print("e ",e)
-    # I loop over the headers such as:
-    #           'Content-Length: 5'
-    # and I split each line on the colon. I create the first part of that line to be the key, and I 
-    # assign the second part of the line as the value and I strip the line of any leading whitespace
+
     newHeaderDict = {}
     # for line in e:
     #     t = line.split(":")
     #     newHeaderDict[t[0]] = t[1].strip(' ')
     # return newHeaderDict
+
+    # I loop over the headers such as:
+    #           'Content-Length: 5'
+    # and I split each line on the colon. I create the first part of that line to be the key, and I 
+    # assign the second part of the line as the value and I strip the line of any leading whitespace
     for s in e:
         if s == '':
             break

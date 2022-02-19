@@ -1,6 +1,7 @@
 # reference https://docs.python.org/3/library/socketserver.html?highlight=requesthandlerclass
 
 
+from email import header
 import socketserver
 import sys
 import test
@@ -107,10 +108,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     
         request_line_list = request_line_string.split(" ")
       #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
-       # <Request_Method> <Path> <HTTP_version>#  ffff
+       # <Request_Method> <Path> <HTTP_version>
         request_method = request_line_list[0]
         request_path = request_line_list[1]
-        request_version = request_line_list[2]
+      #  request_version = request_line_list[2]
         print("REQUEST PATHHHHHHHH", request_path)
         # print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
         print('\n\n')
@@ -142,19 +143,17 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             fullNameOfFile = extension[-1].split(".")
             nameOfFile = fullNameOfFile[0]
             filetype = fullNameOfFile[1]
-            # if filetype == "jpg":
-            #     filetype = "jpeg"
             # I am getting the file type so I know how to set the mimetype
             response = buildResponse.buildNonASCIIResponse(f"image/{filetype}", "image/"+extension[-1])
             self.request.sendall(response)
-        if (request_method == "GET" and request_path == "/hello") :
-            respond = buildResponse.build200Response("text/plain; charset=utf-8", "Hello there")
+        if (request_method == "GET" and request_path == "/hello"):
+            respond = buildResponse.build200Response()
             self.request.sendall(respond.encode())
         if (request_method == "GET" and request_path == "/hi"):
-            respond = buildResponse.build301Response("/hello")
+            respond = buildResponse.build301Response()
             self.request.sendall(respond.encode())
-        else: 
-            respond = buildResponse.build404Response("text/plain; charset=utf-8", "Page Does Not Exist")
+        else:                                           
+            respond = buildResponse.build404Response()
             self.request.sendall(respond.encode())
             
         
@@ -164,7 +163,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # for s in r:
         #     print(f"this is line {start} of split on \\r\\n\\r\\n:\n", s)
         #     start+=1
-        # print("The length of the data via string parser :" , parse.strParser(decoded_received_string))
         """
         Content-Length is the number of bytes not number of characters
         to get the content length correct of a utf-8 STRING, 
@@ -179,7 +177,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         """
         sys.stdout.flush() # a way to see the output in the terminal even if its buffering
 
-        # just send back the same data, but upper-cased
         print("\n\n")
         #self.request.sendall("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nWhat's up world!!".encode())
 
