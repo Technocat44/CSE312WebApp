@@ -130,31 +130,28 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             start+=1
 
         if (request_method == "GET" and request_path == "/"):
-            respond = buildResponse.buildNonASCIIResponse("text/html; charset=utf-8", "index.html")
+            respond = buildResponse.buildIndexHTMLResponse()
             self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/style.css"):
-            respond = buildResponse.buildHTMLResponse("text/css; charset=utf-8 ", "style.css" )
-            self.request.sendall(respond.encode())  
+            respond = buildResponse.buildCSSResponse()
+            self.request.sendall(respond)  
         if (request_method == "GET" and request_path == "/functions.js"):
-            respond = buildResponse.buildNonASCIIResponse("application/javascript; charset=utf-8", "functions.js")
+            respond = buildResponse.buildFunctionJSResponse()
             self.request.sendall(respond)
         if (request_method == "GET" and request_path.startswith("/image")):
             extension = request_path.split("/")
-            fullNameOfFile = extension[-1].split(".")
-            nameOfFile = fullNameOfFile[0]
-            filetype = fullNameOfFile[1]
             # I am getting the file type so I know how to set the mimetype
-            response = buildResponse.buildNonASCIIResponse(f"image/{filetype}", "image/"+extension[-1])
+            response = buildResponse.buildImageResponse(extension)
             self.request.sendall(response)
         if (request_method == "GET" and request_path == "/hello"):
             respond = buildResponse.build200Response()
-            self.request.sendall(respond.encode())
+            self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/hi"):
             respond = buildResponse.build301Response()
-            self.request.sendall(respond.encode())
+            self.request.sendall(respond)
         else:                                           
             respond = buildResponse.build404Response()
-            self.request.sendall(respond.encode())
+            self.request.sendall(respond)
             
         
        
