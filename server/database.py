@@ -31,8 +31,9 @@ the same collection do not need to have the same set of fields or structure, and
 mongo_client = pymongo.MongoClient("mongo")
 db = mongo_client['cse312']
 chat_collection = db['chat']
-#print(mongo_client.list_database_names())
+print(mongo_client.list_database_names())
 #chat_collection.insert()
 
 mydict= {"username": "james", "message":"hello"}
 x = chat_collection.insert_one(mydict)
+print(x)
