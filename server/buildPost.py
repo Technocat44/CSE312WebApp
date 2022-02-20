@@ -1,5 +1,7 @@
 import buildResponse
 
 
-# def build201Response():
-#     response = buildResponse.buildStaticResponse("201 Created", "application/json", content)
+def build201Response(length: str, mimetype: str):
+    content = "hi"
+    response = buildResponse.buildStaticResponse("201 Created", "application/json", content)
+    return response.encode()

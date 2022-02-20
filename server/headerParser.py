@@ -39,6 +39,9 @@ def buildHeaderDict(decodedSplitHeaders):
         else:
             t = s.split(':')
             newHeaderDict[t[0]] = t[1].strip(' ')
+    # updated header so it does contain the body of the request
+    newHeaderDict["Body"] = decodedSplitHeaders[-1]
+    
     return newHeaderDict
 
 

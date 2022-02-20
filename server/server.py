@@ -1,14 +1,11 @@
 # reference https://docs.python.org/3/library/socketserver.html?highlight=requesthandlerclass
 
-
-from email import header
 import socketserver
 import sys
-import test
-import os
-import parse
+import server.headerParser as headerParser
 import osHandlers
 import buildResponse
+import buildPost
 # I am testing out WSL and git
 # test.sayHello()
 gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
@@ -117,10 +114,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
         print('\r\n')
      #   print(f"GGGGGGGGGGGGGGGGGGGGGGGG This is the decoded string split on rnrn :", raw_data_for_headers)
-        headerDict = parse.buildHeaderDict(raw_byte_data_list)
-        # print("******************************** This is headerDict", headerDict)
-        # useragent = headerDict['User-Agent']
-        # print("the value of useragent from the headerDict" , useragent)
+        headerDict = headerParser.buildHeaderDict(raw_byte_data_list)
+        print("******************************** This is headerDict", headerDict)
+        body = headerDict['Body']
+        print("the value of body from the headerDict" ,body)
         start = 0
         print("FROM the request/client\n")
         for s in raw_byte_data_list:
@@ -155,10 +152,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         ###########################################################
         #
         # POST request for DB
+        # A Post request will contain the content length, content type and the body which contains what the user wants to post
         #
         ###########################################################
+        # The body of the request will be a JSON object with email and username fields
         if (request_method == "POST" and request_path == "/users"):
-            return 
+            contentLength = headerDict["Content-Length"]
+            contentType = headerDict["Content-Type"]
+            r = buildPost.build201Response(contentLength, contentType)
         else:                                           
             respond = buildResponse.build404Response()
             self.request.sendall(respond)
