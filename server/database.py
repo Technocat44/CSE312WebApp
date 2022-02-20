@@ -51,7 +51,7 @@ def get_next_id():
     users_id_collection.insert_one({"last_id": 1})
     return 1
 
-# 
+# takes in a new user and creates them in the db
 def create(user_dict):
   users_collection.insert_one(user_dict)
   user_dict.pop("_id")

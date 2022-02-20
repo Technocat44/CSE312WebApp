@@ -2,10 +2,10 @@
 
 import socketserver
 import sys
-import server.headerParser as headerParser
+import headerParser
 import osHandlers
 import buildResponse
-import buildPost
+import usersResponse 
 # I am testing out WSL and git
 # test.sayHello()
 gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
@@ -158,8 +158,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # The body of the request will be a JSON object with email and username fields
         if (request_method == "POST" and request_path == "/users"):
             contentLength = headerDict["Content-Length"]
-            contentType = headerDict["Content-Type"]
-            r = buildPost.build201Response(contentLength, contentType)
+            contentType = headerDict["Content-Type"] # TODO:  I dont know if I need the content type from a request or not 
+            body = headerDict["Body"]
+            print("THIS IS FOR A POST REQUEST FOR /users. contentLength: ", contentLength, " contentType : ", contentType ," body :" ,body, "\n")
+            r = usersResponse.build201Response(contentLength, body)
+            self.request.sendall(r)
         else:                                           
             respond = buildResponse.build404Response()
             self.request.sendall(respond)
