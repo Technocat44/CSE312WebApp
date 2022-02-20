@@ -1,6 +1,5 @@
 import osHandlers
 import os
-import parse
 
 # TODO: need to abstract this huge function like i did with the static responses
 # break it up to build littler response: might even be able to use the buildStaticResponse function 
@@ -50,17 +49,24 @@ def buildCSSResponse():
 
 # buildNonASCIIResponse("application/javascript; charset=utf-8", "functions.js")
 def buildFunctionJSResponse():
-    content = openFile("function.js", "r")
-    r = buildStaticResponse("200 OK", "application/javascript; charset=utf-8", content)
+    content = openFile("functions.js", "rb")
+    print("THIS IS MY JS CONTENT returned from the open file function: ", content )
+    print("\n\n")
+    r = buildStaticResponse("200 OK", "text/javascript; charset=utf-8", content)
+    print("AND THIS IS THE JS CONTENT AFTER WE buILD THE STATIC RESPONSE", r)
+    r = r.encode()
     r += content
-    return r.encode()
+    print("\n\n")
+    print("THIS IS THE CONTENT BEFORE IT GETS ENCODED : ", r)
+    print("Double chekcing the content length: ", len(r))
+    return r
 
 def buildImageResponse(extension):
     fullNameOfFile = extension[-1].split(".") # this is a list made from the request_path split on the (.) ex: ["flamingo", "jpg"]
     filetype = fullNameOfFile[1] # we grab the 2nd element which is the filetype, such as .jpg or .png
     content = openFile("image/"+extension[-1], "rb") # extnsion[-1] = flamingo.jpg 
     r = buildStaticResponse("200 OK", f"image/{filetype}", content)
-    r += r.encode() # we encode the string first to convert it to bytes
+    r = r.encode() # we encode the string first to convert it to bytes
     r += content # then we concatenate the image with the byte string
     return r
 # this method is for content types that have non-ASCII characters
@@ -109,6 +115,6 @@ def build301Response():
 
 def build404Response():
     content = "Page Does Not Exist"
-    r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8")
+    r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8","")
     r += content
     return r.encode()

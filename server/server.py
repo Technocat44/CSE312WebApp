@@ -10,7 +10,7 @@ import parse
 import osHandlers
 import buildResponse
 # I am testing out WSL and git
-test.sayHello()
+# test.sayHello()
 gh = osHandlers.addForwardSlash("\http\gggg\www\.com")
 print(gh)
 """
@@ -95,11 +95,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(self.client_address[0] + " is sending data: " )
         clients.append(self.client_address[0])
 
-              
-        #print("The type of received data: ",type(received_data))
+        # received data is a string of bytes, we decode to turn it into a string    
+        print("The type of received data: ",type(received_data))
         decoded_received_string = received_data.decode('utf-8')
-        #print("The type of the decode data: ",type(rcvd_data_string))
-        # received data is a string of bytes, we decode to turn it into a string
+      
         
         raw_byte_data_list = decoded_received_string.split('\r\n')
         request_line_string = raw_byte_data_list[0]
@@ -113,9 +112,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request_path = request_line_list[1]
       #  request_version = request_line_list[2]
         print("REQUEST PATHHHHHHHH", request_path)
-        # print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
+        print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
         print('\n\n')
-        # print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
+        #print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
         print('\r\n')
      #   print(f"GGGGGGGGGGGGGGGGGGGGGGGG This is the decoded string split on rnrn :", raw_data_for_headers)
         headerDict = parse.buildHeaderDict(raw_byte_data_list)
@@ -137,6 +136,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             self.request.sendall(respond)  
         if (request_method == "GET" and request_path == "/functions.js"):
             respond = buildResponse.buildFunctionJSResponse()
+            print("TJIS IS THE CONTENT AFTER I ENCODE IT: ", respond)
+            print("\n")
+            print("THIS IS THE LENGTH OF THE FILE AFTER ENCODEING IT :" , len(respond))
             self.request.sendall(respond)
         if (request_method == "GET" and request_path.startswith("/image")):
             extension = request_path.split("/")
@@ -149,6 +151,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         if (request_method == "GET" and request_path == "/hi"):
             respond = buildResponse.build301Response()
             self.request.sendall(respond)
+
+        ###########################################################
+        #
+        # POST request for DB
+        #
+        ###########################################################
+        if (request_method == "POST" and request_path == "/users"):
+            return 
         else:                                           
             respond = buildResponse.build404Response()
             self.request.sendall(respond)

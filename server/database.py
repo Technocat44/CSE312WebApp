@@ -1,6 +1,6 @@
 #python dotenv for environment variables
 # the password has to match in docker compose and here
-import pymongo
+from pymongo import MongoClient
 """
 to check out what is happening in the db follow these steps:
 
@@ -28,12 +28,37 @@ A document is a set of key-value pairs. Documents have dynamic schema. Dynamic s
 the same collection do not need to have the same set of fields or structure, and common fields in a collection's
  documents may hold different types of data.
 """
-mongo_client = pymongo.MongoClient("mongo")
+mongo_client = MongoClient("mongo")
 db = mongo_client['cse312']
-chat_collection = db['chat']
+
+users_collection = db['users'] # one collection for users
+users_id_collection = db["users_id"] # one collection for users ids
+
+
 print(mongo_client.list_database_names())
 #chat_collection.insert()
 
-mydict= {"username": "james", "message":"hello"}
-x = chat_collection.insert_one(mydict)
-print(x)
+# when ever we need a new id, we go into our file collection
+# find one document, (that's all we will have in this collection)
+def get_next_id():
+  id_object = users_id_collection.find_one({}) # retrieve the doc
+  if id_object: # if there is one in there, grab the last id, convert to int, increment by 1 
+    next_id = int(id_object["last_id"]) + 1 
+    # update the record using the set command
+    users_id_collection.update_one({}, {"$set": {"last_id": next_id}})
+    return next_id # then reutnr 
+  else: # if it doesn't exist this will make the first id
+    users_id_collection.insert_one({"last_id": 1})
+    return 1
+
+# 
+def create(user_dict):
+  users_collection.insert_one(user_dict)
+  user_dict.pop("_id")
+
+# if we want to get soemthing out of the db, we don't want the _id, 
+# give find another argument which says give me everything except the _id
+# then use the list constructor to put all that data into a list
+def list_all():
+  all_users = users_collection.find({}, {"_id": 0})
+  return list(all_users)
