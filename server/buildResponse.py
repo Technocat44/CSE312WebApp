@@ -35,10 +35,11 @@ def openFile(fileName:str, readType:str):
 #     return r
 # buildNonASCIIResponse("text/html; charset=utf-8", "index.html")
 def buildIndexHTMLResponse():
-    content = openFile("index.html", "r")
+    content = openFile("index.html", "rb")
     r = buildStaticResponse("200 OK", "text/html; charset=utf-8", content)
+    r = r.encode()
     r += content
-    return r.encode()
+    return r
 
 # buildHTMLResponse("text/css; charset=utf-8 ", "style.css" )
 def buildCSSResponse():
@@ -94,7 +95,7 @@ I could make the build response methods use a status code
 """
 def buildStaticResponse(status_code:str, mimetype:str, content:str):
     response = f"HTTP/1.1 {status_code}\r\n"
-    response += f"Content-Length: {str(len(content))}\r\n"
+    response += f"Content-Length: {str(len(content))}\r\n" # TODO: fix html with non asci
     if (status_code == "301 Moved Permanently"): # THIS is NOT the mimetype for 301 its actually the location 
         response += f"Location: http://localhost:8080{mimetype}\r\n\r\n"
     response += f"Content-Type: {mimetype}\r\n"

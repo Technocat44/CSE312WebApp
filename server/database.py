@@ -35,7 +35,7 @@ users_collection = db['users'] # one collection for users
 users_id_collection = db["users_id"] # one collection for users ids
 
 
-print(mongo_client.list_database_names())
+#print(mongo_client.list_database_names())
 #chat_collection.insert()
 
 # when ever we need a new id, we go into our file collection

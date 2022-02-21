@@ -19,10 +19,9 @@ def buildHeaderDict(decodedSplitHeaders):
 
     # I create a new list that contains all elements in the list except the request line var[0], the second last 
     # element (the CLRF ''), var[-2], and the last element (the body) var[-1]. The only things left in this list are the headers 
-    #e = decodedSplitHeaders[1:-2]
-    e = decodedSplitHeaders[1:]
+    e = decodedSplitHeaders[1:-2]
+    #e = decodedSplitHeaders[1:]
     # print("e ",e)
-
     newHeaderDict = {}
     # for line in e:
     #     t = line.split(":")
@@ -37,7 +36,7 @@ def buildHeaderDict(decodedSplitHeaders):
         if s == '':
             break
         else:
-            t = s.split(':')
+            t = s.split(':',1)
             newHeaderDict[t[0]] = t[1].strip(' ')
     # updated header so it does contain the body of the request
     newHeaderDict["Body"] = decodedSplitHeaders[-1]

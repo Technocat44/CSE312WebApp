@@ -88,7 +88,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         print("[SERVER INITIALZING]")
         # self.request is the TCP socket connected to the client
-        received_data = self.request.recv(1024).strip()
+
+        # TODO: change the received data to not strip
+        # then I will have to rework the header parsers
+        received_data = self.request.recv(1024)
         print(self.client_address[0] + " is sending data: " )
         clients.append(self.client_address[0])
 
@@ -98,17 +101,20 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
       
         
         raw_byte_data_list = decoded_received_string.split('\r\n')
+        print("RAWWWWWWWWWWW: ", raw_byte_data_list)
         request_line_string = raw_byte_data_list[0]
-      
-      #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line before splitting: {request_line_string}" )
+       
+        print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line before splitting: {request_line_string}" )
     
         request_line_list = request_line_string.split(" ")
-      #  print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
+        print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
        # <Request_Method> <Path> <HTTP_version>
         request_method = request_line_list[0]
-        request_path = request_line_list[1]
+        
+        if len(request_line_list) > 1:
+            request_path = request_line_list[1]
       #  request_version = request_line_list[2]
-        print("REQUEST PATHHHHHHHH", request_path)
+            print("REQUEST PATHHHHHHHH", request_path)
         print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
         print('\n\n')
         #print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
@@ -124,9 +130,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             
             print(f"This is line {start}: ", s)
             start+=1
-
+        
         if (request_method == "GET" and request_path == "/"):
+            print("Hey I am here")
             respond = buildResponse.buildIndexHTMLResponse()
+            print("'HTML response, ", respond)
             self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/style.css"):
             respond = buildResponse.buildCSSResponse()
@@ -144,6 +152,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             self.request.sendall(response)
         if (request_method == "GET" and request_path == "/hello"):
             respond = buildResponse.build200Response()
+            print("Hello response: ", respond)
             self.request.sendall(respond)
         if (request_method == "GET" and request_path == "/hi"):
             respond = buildResponse.build301Response()
@@ -186,6 +195,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             - Content-Length is the size of the file
             - set the Content-Type to image/<image_type>
         """
+        sys.stderr.flush()
         sys.stdout.flush() # a way to see the output in the terminal even if its buffering
 
         print("\n\n")

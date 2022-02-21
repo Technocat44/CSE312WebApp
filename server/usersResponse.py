@@ -4,7 +4,7 @@ import database
 
 def build201Response(length: str, body: str):
     response = buildUserResponse(length, "201 Created", "application/json", body)
-    return response.encode()
+    return response
 
 """
   response = f"HTTP/1.1 {status_code}\r\n"
@@ -16,7 +16,7 @@ def build201Response(length: str, body: str):
     response += "\r\n"
 """
 # this method only works for body request that our strings!!! TODO: create a different response builder for images, etc
-def buildUserResponse(length: str, statusCode: str, mimetype: str, body: str):
+def buildUserResponse(length: str, statusCode: str, mimetype: str, body):
     r = f"HTTP/1.1 {statusCode}\r\n"
     r += f"Content-Length: {length}\r\n"
     r += f"Content-Type: {mimetype}\r\n" # I might have to change the content-type to application/json if it isn't alreay
@@ -32,7 +32,10 @@ def buildUserResponse(length: str, statusCode: str, mimetype: str, body: str):
 # 
 def createUser(body):
     # the body is a json string
-    body_json_str = body.decode()
+    print("This is the body of the post: ", body)
+    print("this is the type of the body: ", type(body))
+    body_json_str = body   # thought I had to decode() this 
+   
     # the json string is a dictionary
     body_dict = json.loads(body_json_str)
     # we create a new id for the user
