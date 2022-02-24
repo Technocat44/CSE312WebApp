@@ -9,3 +9,12 @@ services:
       WAIT_HOST: mongo:27017
     ports:
       - "8080:8080"
+  
+
+  # debug:
+  #   image: test
+  #   build: 
+  #     target: debug
+  #   ports: 
+  #     - "8080:8080"
+  #     - "5678:5678"

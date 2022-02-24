@@ -96,26 +96,28 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         clients.append(self.client_address[0])
 
         # received data is a string of bytes, we decode to turn it into a string    
-        print("The type of received data: ",type(received_data))
+    #    print("The type of received data: ",type(received_data))
         decoded_received_string = received_data.decode('utf-8')
-      
-        
+    #    print("decoded received string: ", decoded_received_string)
+        bodySplit = decoded_received_string.split('\r\n\r\n')
+        bodyFromRequest = bodySplit[-1]
+        print("This is the bodyFrom the request: ", bodyFromRequest)
         raw_byte_data_list = decoded_received_string.split('\r\n')
-        print("RAWWWWWWWWWWW: ", raw_byte_data_list)
+   #     print("RAWWWWWWWWWWW: ", raw_byte_data_list)
         request_line_string = raw_byte_data_list[0]
        
-        print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line before splitting: {request_line_string}" )
+   #     print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line before splitting: {request_line_string}" )
     
         request_line_list = request_line_string.split(" ")
-        print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
+   #     print(f"RRRRRRRRRRRRRRRRRRRRRRRRRRR\n This is the request line after splitting: {request_line_list}" )
        # <Request_Method> <Path> <HTTP_version>
         request_method = request_line_list[0]
         
         if len(request_line_list) > 1:
             request_path = request_line_list[1]
       #  request_version = request_line_list[2]
-            print("REQUEST PATHHHHHHHH", request_path)
-        print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
+   #         print("REQUEST PATHHHHHHHH", request_path)
+    #    print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
         print('\n\n')
         #print(repr(f"YYYYYYYYYYYYYYYYYYYYY This is the decoded string raw {decoded_received_string}"))
         print('\r\n')
@@ -126,11 +128,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print("the value of body from the headerDict" ,body)
         start = 0
         print("FROM the request/client\n")
-        for s in raw_byte_data_list:
+        # for s in raw_byte_data_list:
             
-            print(f"This is line {start}: ", s)
-            start+=1
-        
+        #     print(f"This is line {start}: ", s)
+        #     start+=1
+        print(f"Request path: {request_path}, Request method: {request_method}")
         if (request_method == "GET" and request_path == "/"):
             print("Hey I am here")
             respond = buildResponse.buildIndexHTMLResponse()
@@ -165,12 +167,16 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #
         ###########################################################
         # The body of the request will be a JSON object with email and username fields
+        if (request_method == "GET" and request_path == "/users"):
+            r = usersResponse.build200Response()
+            print(f"this is the response for a GET request to /users which sends back all the users {r}")
+            self.request.sendall(r)
         if (request_method == "POST" and request_path == "/users"):
             contentLength = headerDict["Content-Length"]
             contentType = headerDict["Content-Type"] # TODO:  I dont know if I need the content type from a request or not 
             body = headerDict["Body"]
-            print("THIS IS FOR A POST REQUEST FOR /users. contentLength: ", contentLength, " contentType : ", contentType ," body :" ,body, "\n")
-            r = usersResponse.build201Response(contentLength, body)
+            print("THIS IS FOR A POST REQUEST FOR /users. contentLength: ", contentLength, " contentType : ", contentType ," body :" ,bodyFromRequest, "\n")
+            r = usersResponse.build201Response(contentLength, bodyFromRequest)
             self.request.sendall(r)
         else:                                           
             respond = buildResponse.build404Response()

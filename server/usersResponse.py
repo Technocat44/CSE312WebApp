@@ -2,10 +2,24 @@ import buildResponse
 import json
 import database
 
-def build201Response(length: str, body: str):
-    response = buildUserResponse(length, "201 Created", "application/json", body)
+def build201Response(length, body: str):
+    response = buildUserResponse(length, "201 Created", "application/json")
+    body_dict_with_id = createUser(body)
+    # I am attaching a copy of the dictionary that was sent to the db as the response of the body
+    response += body_dict_with_id 
     return response
 
+def build200Response():
+    # grab all users from db
+    showAllUsers = database.list_all()
+    print(f"here is the users from the db {showAllUsers}")
+    # make the dictionary of users a json string and then encode it to make it a byte string
+    userList = json.dumps(showAllUsers).encode()
+    # take the length of the byte string
+    userListLength = len(userList)
+    response = buildUserResponse(userListLength, "200 OK", "application/json")
+    response += userList
+    return response
 """
   response = f"HTTP/1.1 {status_code}\r\n"
     response += f"Content-Length: {str(len(content))}\r\n"
@@ -16,22 +30,21 @@ def build201Response(length: str, body: str):
     response += "\r\n"
 """
 # this method only works for body request that our strings!!! TODO: create a different response builder for images, etc
-def buildUserResponse(length: str, statusCode: str, mimetype: str, body):
+def buildUserResponse(length, statusCode: str, mimetype: str):
     r = f"HTTP/1.1 {statusCode}\r\n"
     r += f"Content-Length: {length}\r\n"
     r += f"Content-Type: {mimetype}\r\n" # I might have to change the content-type to application/json if it isn't alreay
     # the body is a json string
-    body_dict_with_id = createUser(body)
     r += "\r\n"
     r = r.encode()
-    r += body_dict_with_id.encode()
+    print(f"this is the general userResponse {r}")
 
     return r
 
 # this function takes in a json string containing a dictionary with a username and email
 # 
 def createUser(body):
-    # the body is a json string
+    # the body is a json string/dictionary object
     print("This is the body of the post: ", body)
     print("this is the type of the body: ", type(body))
     body_json_str = body   # thought I had to decode() this 
@@ -43,4 +56,5 @@ def createUser(body):
     # we call the create function from our database file to send that new user to the mongo db
     database.create(body_dict)
     # we turn the body back into a json string and TODO: do I need to encode it
-    return json.dumps(body_dict)
+
+    return json.dumps(body_dict).encode()

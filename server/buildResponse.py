@@ -116,6 +116,6 @@ def build301Response():
 
 def build404Response():
     content = "Page Does Not Exist"
-    r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8","")
+    r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8",content)
     r += content
     return r.encode()

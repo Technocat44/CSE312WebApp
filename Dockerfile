@@ -1,4 +1,5 @@
-FROM python:3
+FROM python:3 
+# as base
 
 ENV HOME /root
 WORKDIR /root
@@ -9,6 +10,14 @@ RUN pip3 install pymongo
 COPY . .
 
 EXPOSE 8080
+# ###########################################################
+# FROM base as debug 
+# RUN pip install ptvsd
+
+# WORKDIR /root
+# CMD python -m ptvsd --host=0.0.0.0 --port 5678 --wait --multiprocess -m python3 server/server.py 
+# ########################################################
+# FROM base as prod
 
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.9.0/wait /wait
 RUN chmod +x /wait
