@@ -114,8 +114,7 @@ def build301Response():
     r = buildStaticResponse("301 Moved Permanently" ,"/hello", "")
     return r.encode()
 
-def build404Response():
-    content = "Page Does Not Exist"
-    r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8",content)
-    r += content
+def build404Response(message):
+    r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8",message)
+    r += message
     return r.encode()

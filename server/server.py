@@ -128,13 +128,13 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print("the value of body from the headerDict" ,body)
         start = 0
         print("FROM the request/client\n")
-        # for s in raw_byte_data_list:
+        for s in raw_byte_data_list:
             
-        #     print(f"This is line {start}: ", s)
-        #     start+=1
+            print(f"This is line {start}: ", s)
+            start+=1
         print(f"Request path: {request_path}, Request method: {request_method}")
         if (request_method == "GET" and request_path == "/"):
-            print("Hey I am here")
+            print("Hey I am here in the index/html response")
             respond = buildResponse.buildIndexHTMLResponse()
             print("'HTML response, ", respond)
             self.request.sendall(respond)
@@ -167,8 +167,25 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #
         ###########################################################
         # The body of the request will be a JSON object with email and username fields
+        if (request_method == "DELETE" and request_path == "/users/"):
+            """
+            
+            MongoDB's remove() method is used to remove a document from the collection. remove() method accepts two parameters.
+                 One is deletion criteria and second is justOne flag.
+
+            deletion criteria − (Optional) deletion criteria according to documents will be removed.
+
+            justOne −            (Optional) if set to true or 1, then remove only one document.    
+            """
+        if (request_method == "GET" and "/users/" in request_path):
+            # have to split up the path
+            user = request_path.split("/")
+            userId = user[-1]
+            print(f"This is the user id: {userId}, and this is the type of userId {type(userId)}")
+            r = usersResponse.buildSingleUserResponse(int(userId))
+            self.request.sendall(r)
         if (request_method == "GET" and request_path == "/users"):
-            r = usersResponse.build200Response()
+            r = usersResponse.buildAllUsersResponse()
             print(f"this is the response for a GET request to /users which sends back all the users {r}")
             self.request.sendall(r)
         if (request_method == "POST" and request_path == "/users"):
@@ -179,7 +196,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             r = usersResponse.build201Response(contentLength, bodyFromRequest)
             self.request.sendall(r)
         else:                                           
-            respond = buildResponse.build404Response()
+            respond = buildResponse.build404Response("Page Does Not Exist")
             self.request.sendall(respond)
             
         

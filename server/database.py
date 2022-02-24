@@ -1,5 +1,5 @@
 #python dotenv for environment variables
-# the password has to match in docker compose and here
+# https://docs.mongodb.com/manual/reference/method/db.collection.findOne/
 from pymongo import MongoClient
 """
 to check out what is happening in the db follow these steps:
@@ -62,3 +62,8 @@ def create(user_dict):
 def list_all():
   all_users = users_collection.find({}, {"_id": 0})
   return list(all_users)
+
+def list_one(idNumber):
+  oneUser = users_collection.find_one({"id":idNumber}, {"_id":0})
+  # if the id does not exist, oneUser will equal null / None
+  return oneUser

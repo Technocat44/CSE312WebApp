@@ -9,7 +9,20 @@ def build201Response(length, body: str):
     response += body_dict_with_id 
     return response
 
-def build200Response():
+def buildSingleUserResponse(idNumber):
+    showSingleUser = database.list_one(idNumber)
+    print("Show single user: ", showSingleUser)
+    showSingleUserJsonBytes = json.dumps(showSingleUser).encode()
+    print("This is the single user: ", showSingleUserJsonBytes)
+    if showSingleUser == None:
+        r = buildResponse.build404Response("User Does Not Exist")
+        return r
+    r = buildUserResponse(len(showSingleUserJsonBytes), "200 OK", "application/json")
+    r += showSingleUserJsonBytes
+    return r
+
+
+def buildAllUsersResponse():
     # grab all users from db
     showAllUsers = database.list_all()
     print(f"here is the users from the db {showAllUsers}")
@@ -29,11 +42,19 @@ def build200Response():
     response += "X-Content-Type-Options: nosniff\r\n"
     response += "\r\n"
 """
+
+def build404Response():
+    content = "User Does Not Exist"
+    r = buildUserResponse(len(content), "404 Not Found", "text/plain; charset=utf-8")
+    r += content
+    return r.encode()
+
 # this method only works for body request that our strings!!! TODO: create a different response builder for images, etc
 def buildUserResponse(length, statusCode: str, mimetype: str):
     r = f"HTTP/1.1 {statusCode}\r\n"
     r += f"Content-Length: {length}\r\n"
     r += f"Content-Type: {mimetype}\r\n" # I might have to change the content-type to application/json if it isn't alreay
+    r += "X-Content-Type-Options: nosniff\r\n"
     # the body is a json string
     r += "\r\n"
     r = r.encode()
