@@ -137,24 +137,29 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             respond = buildResponse.buildIndexHTMLResponse()
             print("'HTML response, ", respond)
             self.request.sendall(respond)
+
         if (request_method == "GET" and request_path == "/style.css"):
             respond = buildResponse.buildCSSResponse()
             self.request.sendall(respond)  
+
         if (request_method == "GET" and request_path == "/functions.js"):
             respond = buildResponse.buildFunctionJSResponse()
             print("TJIS IS THE CONTENT AFTER I ENCODE IT: ", respond)
             print("\n")
             print("THIS IS THE LENGTH OF THE FILE AFTER ENCODEING IT :" , len(respond))
             self.request.sendall(respond)
+
         if (request_method == "GET" and request_path.startswith("/image")):
             extension = request_path.split("/")
             # I am getting the file type so I know how to set the mimetype
             response = buildResponse.buildImageResponse(extension)
             self.request.sendall(response)
+
         if (request_method == "GET" and request_path == "/hello"):
             respond = buildResponse.build200Response()
             print("Hello response: ", respond)
             self.request.sendall(respond)
+            
         if (request_method == "GET" and request_path == "/hi"):
             respond = buildResponse.build301Response()
             self.request.sendall(respond)
@@ -166,17 +171,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #
         ###########################################################
         # The body of the request will be a JSON object with email and username fields
-        # if (request_method == "DELETE" and "/users/" in request_path):
-        #     return 0
-            """
-            
-            MongoDB's remove() method is used to remove a document from the collection. remove() method accepts two parameters.
-                 One is deletion criteria and second is justOne flag.
+        if (request_method == "DELETE" and "/users/" in request_path):
+            user = request_path.split("/")
+            userId = user[-1]
+            r = usersResponse.buildDeleteResponse(int(userId))
+            self.request.sendall(r)
 
-            deletion criteria − (Optional) deletion criteria according to documents will be removed.
-
-            justOne −            (Optional) if set to true or 1, then remove only one document.    
-            """
         if (request_method == "PUT" and "/users/" in request_path):
             # use userCollection.update({"id":idNumber}, {"$set": {"email":"<whatever is in the body>", "username":"<whatever is in the body>"}})
             # can update any field except the id!
@@ -186,9 +186,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             r = usersResponse.buildUpdateResponse(int(userId), bodyFromRequest)
             print("this is the response, ", r)
             self.request.sendall(r)
-        if (request_method == "DELETE" and "/users/" in request_path):
-            # we can use userCollection.delete({"id":idNumber})
-            return 0
+
         if (request_method == "GET" and "/users/" in request_path):
             # have to split up the path
             user = request_path.split("/")
@@ -196,10 +194,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             print(f"This is the user id: {userId}, and this is the type of userId {type(userId)}")
             r = usersResponse.buildSingleUserResponse(int(userId))
             self.request.sendall(r)
+
         if (request_method == "GET" and request_path == "/users"):
             r = usersResponse.buildAllUsersResponse()
             print(f"this is the response for a GET request to /users which sends back all the users {r}")
             self.request.sendall(r)
+
         if (request_method == "POST" and request_path == "/users"):
             contentLength = headerDict["Content-Length"]
             contentType = headerDict["Content-Type"] # TODO:  I dont know if I need the content type from a request or not 
@@ -207,6 +207,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             print("THIS IS FOR A POST REQUEST FOR /users. contentLength: ", contentLength, " contentType : ", contentType ," body :" ,bodyFromRequest, "\n")
             r = usersResponse.buildCreateResponse(contentLength, bodyFromRequest)
             self.request.sendall(r)
+
         else:                                           
             respond = buildResponse.build404Response("Page Does Not Exist")
             self.request.sendall(respond)

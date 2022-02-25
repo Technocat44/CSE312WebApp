@@ -21,6 +21,14 @@ def buildSingleUserResponse(idNumber):
     r += showSingleUserJsonBytes
     return r
 
+def buildDeleteResponse(userId):
+    deleted = database.deleteUser(userId)
+    if deleted == 0:
+        rep = buildResponse.build404Response("No such user exist")
+        return rep
+    r = "HTTP/1.1\r\n204 No Content\r\nContent-Length: 0\r\n\r\n"
+    return r.encode()
+
 def buildUpdateResponse(userId, bodyFromRequest):
     # use userCollection.update({"id":idNumber}, {"$set": {"email":"<whatever is in the body>", "username":"<whatever is in the body>"}})
     # can update any field except the id!

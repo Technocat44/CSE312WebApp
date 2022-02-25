@@ -81,3 +81,8 @@ def updateUser(userId, email, username):
                                        return_document= ReturnDocument.AFTER)
   print(f"this is the value of update. Could be None if the id does not exist, or the updated value == {str(update)}")
   return update
+
+def deleteUser(userId):
+  deleted = users_collection.delete_one({"id":userId})
+  # deleted is an int, if it deleted the user it is 1 if it doesn't delete anything it'll be 0
+  return deleted
