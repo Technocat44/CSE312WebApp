@@ -2,7 +2,7 @@ import buildResponse
 import json
 import database
 
-def build201Response(length, body: str):
+def buildCreateResponse(length, body: str):
     response = buildUserResponse(length, "201 Created", "application/json")
     body_dict_with_id = createUser(body)
     # I am attaching a copy of the dictionary that was sent to the db as the response of the body
@@ -10,7 +10,7 @@ def build201Response(length, body: str):
     return response
 
 def buildSingleUserResponse(idNumber):
-    showSingleUser = database.list_one(idNumber)
+    showSingleUser = database.retrieve_one(idNumber)
     print("Show single user: ", showSingleUser)
     showSingleUserJsonBytes = json.dumps(showSingleUser).encode()
     print("This is the single user: ", showSingleUserJsonBytes)
@@ -21,6 +21,22 @@ def buildSingleUserResponse(idNumber):
     r += showSingleUserJsonBytes
     return r
 
+def buildUpdateResponse(userId, bodyFromRequest):
+    # use userCollection.update({"id":idNumber}, {"$set": {"email":"<whatever is in the body>", "username":"<whatever is in the body>"}})
+    # can update any field except the id!
+    print("this is the type of the body, should be json: ", type(bodyFromRequest))
+    bodyLoad = json.loads(bodyFromRequest)
+    email = bodyLoad["email"]
+    username = bodyLoad["username"]
+    # call find_one_and_update(), then use that return value as the body of the response
+    update = database.updateUser(userId, email, username)
+    updateToJson = json.dumps(update).encode()
+    if update == None:
+        r = buildResponse.build404Response("Cannot Update, User Does Not Exist")
+        return r
+    r = buildUserResponse(len(update), "200 OK", "application/json")
+    r += updateToJson
+    return r
 
 def buildAllUsersResponse():
     # grab all users from db
@@ -42,6 +58,7 @@ def buildAllUsersResponse():
     response += "X-Content-Type-Options: nosniff\r\n"
     response += "\r\n"
 """
+
 
 def build404Response():
     content = "User Does Not Exist"

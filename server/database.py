@@ -1,6 +1,9 @@
 #python dotenv for environment variables
 # https://docs.mongodb.com/manual/reference/method/db.collection.findOne/
+# https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find_one_and_update
+from hashlib import new
 from pymongo import MongoClient
+from pymongo import ReturnDocument
 """
 to check out what is happening in the db follow these steps:
 
@@ -63,7 +66,17 @@ def list_all():
   all_users = users_collection.find({}, {"_id": 0})
   return list(all_users)
 
-def list_one(idNumber):
+def retrieve_one(idNumber):
   oneUser = users_collection.find_one({"id":idNumber}, {"_id":0})
   # if the id does not exist, oneUser will equal null / None
   return oneUser
+
+    # use userCollection.update({"id":idNumber}, {"$set": {"email":"<whatever is in the body>", "username":"<whatever is in the body>"}})
+    # can update any field except the id!
+def updateUser(userId, email, username):
+  
+  update = users_collection.find_one_and_update({"id":userId},
+                                       {"$set": {"email":email, "username": username}}, 
+                                       return_document= ReturnDocument.AFTER)
+  print(f"this is the value of update. Could be None if the id does not exist, or the updated value == {update}")
+  return update

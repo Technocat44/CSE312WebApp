@@ -162,3 +162,10 @@ language of choice
 • Make sure you install it in your Dockerfile
 • Study documentation to learn how to use the database
 
+
+####################### CRUDL ########################
+
+POST = create
+PUT = update
+DELETE = delete
+GET = retrieve

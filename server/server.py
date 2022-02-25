@@ -113,8 +113,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
        # <Request_Method> <Path> <HTTP_version>
         request_method = request_line_list[0]
         
-        if len(request_line_list) > 1:
-            request_path = request_line_list[1]
+        request_path = request_line_list[1]
       #  request_version = request_line_list[2]
    #         print("REQUEST PATHHHHHHHH", request_path)
     #    print(repr(f"FFFFFFFFFFFFFFFFFFFFF This is the byte string raw  {received_data}"))
@@ -167,7 +166,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         #
         ###########################################################
         # The body of the request will be a JSON object with email and username fields
-        if (request_method == "DELETE" and request_path == "/users/"):
+        # if (request_method == "DELETE" and "/users/" in request_path):
+        #     return 0
             """
             
             MongoDB's remove() method is used to remove a document from the collection. remove() method accepts two parameters.
@@ -177,6 +177,18 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
             justOne −            (Optional) if set to true or 1, then remove only one document.    
             """
+        if (request_method == "PUT" and "/users/" in request_path):
+            # use userCollection.update({"id":idNumber}, {"$set": {"email":"<whatever is in the body>", "username":"<whatever is in the body>"}})
+            # can update any field except the id!
+            print("hey I am following the put request")
+            user = request_path.split("/")
+            userId = user[-1]
+            r = usersResponse.buildUpdateResponse(int(userId), bodyFromRequest)
+            print("this is the response, ", r)
+            self.request.sendall(r)
+        if (request_method == "DELETE" and "/users/" in request_path):
+            # we can use userCollection.delete({"id":idNumber})
+            return 0
         if (request_method == "GET" and "/users/" in request_path):
             # have to split up the path
             user = request_path.split("/")
@@ -193,7 +205,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             contentType = headerDict["Content-Type"] # TODO:  I dont know if I need the content type from a request or not 
             body = headerDict["Body"]
             print("THIS IS FOR A POST REQUEST FOR /users. contentLength: ", contentLength, " contentType : ", contentType ," body :" ,bodyFromRequest, "\n")
-            r = usersResponse.build201Response(contentLength, bodyFromRequest)
+            r = usersResponse.buildCreateResponse(contentLength, bodyFromRequest)
             self.request.sendall(r)
         else:                                           
             respond = buildResponse.build404Response("Page Does Not Exist")
