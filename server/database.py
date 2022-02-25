@@ -74,9 +74,10 @@ def retrieve_one(idNumber):
     # use userCollection.update({"id":idNumber}, {"$set": {"email":"<whatever is in the body>", "username":"<whatever is in the body>"}})
     # can update any field except the id!
 def updateUser(userId, email, username):
-  
+  # update will either be None or an ObjectId. which we have to convert to a string
   update = users_collection.find_one_and_update({"id":userId},
                                        {"$set": {"email":email, "username": username}}, 
+                                       {"_id":0},
                                        return_document= ReturnDocument.AFTER)
-  print(f"this is the value of update. Could be None if the id does not exist, or the updated value == {update}")
-  return update
+  print(f"this is the value of update. Could be None if the id does not exist, or the updated value == {str(update)}")
+  return str(update)

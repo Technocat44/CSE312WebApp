@@ -30,6 +30,8 @@ def buildUpdateResponse(userId, bodyFromRequest):
     username = bodyLoad["username"]
     # call find_one_and_update(), then use that return value as the body of the response
     update = database.updateUser(userId, email, username)
+    print("THIS IS UPDATE FROM DB find_one_and_update() == ", update)
+    print("this is the type of update =", type(update))
     updateToJson = json.dumps(update).encode()
     if update == None:
         r = buildResponse.build404Response("Cannot Update, User Does Not Exist")
