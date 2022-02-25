@@ -15,8 +15,8 @@ def buildSingleUserResponse(idNumber):
     showSingleUserJsonBytes = json.dumps(showSingleUser).encode()
     print("This is the single user: ", showSingleUserJsonBytes)
     if showSingleUser == None:
-        r = buildResponse.build404Response("User Does Not Exist")
-        return r
+        rep = buildResponse.build404Response("User Does Not Exist")
+        return rep
     r = buildUserResponse(len(showSingleUserJsonBytes), "200 OK", "application/json")
     r += showSingleUserJsonBytes
     return r
@@ -30,13 +30,17 @@ def buildUpdateResponse(userId, bodyFromRequest):
     username = bodyLoad["username"]
     # call find_one_and_update(), then use that return value as the body of the response
     update = database.updateUser(userId, email, username)
+    # update is an ObjectId or its None, if it isn't none we convert to a string
+
+
     print("THIS IS UPDATE FROM DB find_one_and_update() == ", update)
     print("this is the type of update =", type(update))
-    updateToJson = json.dumps(update).encode()
+    updateToJson = json.dumps(str(update)).encode()
+    print("Does update == None?,  update = ",update )
     if update == None:
-        r = buildResponse.build404Response("Cannot Update, User Does Not Exist")
-        return r
-    r = buildUserResponse(len(update), "200 OK", "application/json")
+        w = buildResponse.build404Response("Cannot Update, User Does Not Exist")
+        return w
+    r = buildUserResponse(len(updateToJson), "200 OK", "application/json")
     r += updateToJson
     return r
 
