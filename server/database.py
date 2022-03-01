@@ -1,7 +1,7 @@
 #python dotenv for environment variables
 # https://docs.mongodb.com/manual/reference/method/db.collection.findOne/
 # https://pymongo.readthedocs.io/en/stable/api/pymongo/collection.html#pymongo.collection.Collection.find_one_and_update
-from hashlib import new
+
 from pymongo import MongoClient
 from pymongo import ReturnDocument
 """
@@ -68,6 +68,7 @@ def list_all():
 
 def retrieve_one(idNumber):
   oneUser = users_collection.find_one({"id":idNumber}, {"_id":0})
+  print("this is in the db file, in retrieve_one functionthe response is: ", oneUser)
   # if the id does not exist, oneUser will equal null / None
   return oneUser
 

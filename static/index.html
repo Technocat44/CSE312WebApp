@@ -14,5 +14,24 @@
     <!--<img src="image/cat.jpg" alt="It's a flamingo" class="my_image" /> -->
 
     <script src="functions.js"></script>
+    <p> ____________________________________________________________________________________________________ </p>
+    <form
+      action="/image-upload"
+      id="image-form"
+      method="post"
+      enctype="multipart/form-data"
+    >
+      <label for="image-form-comment">Comment: </label>
+      <textarea
+        id="image-form-comment"
+        name="comment"
+        cols="40"
+        rows="6"
+      ></textarea>
+      <br />
+      <label for="form-file">Image: </label>
+      <input id="form-file" type="file" name="upload" />
+      <input type="submit" value="Post" />
+    </form>
   </body>
 </html>

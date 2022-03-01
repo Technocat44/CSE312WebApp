@@ -22,4 +22,4 @@ EXPOSE 8080
 ADD https://github.com/ufoscout/docker-compose-wait/releases/download/2.9.0/wait /wait
 RUN chmod +x /wait
 #TODO: Need to add back the /wait command
-CMD /wait && python3 server/server.py --host=0.0.0.0
+CMD /wait && python3 server.py --host=0.0.0.0

@@ -94,27 +94,29 @@ I could make the build response methods use a status code
 
 """
 def buildStaticResponse(status_code:str, mimetype:str, content:str):
-    response = f"HTTP/1.1 {status_code}\r\n"
-    response += f"Content-Length: {str(len(content))}\r\n" # TODO: fix html with non asci
-    if (status_code == "301 Moved Permanently"): # THIS is NOT the mimetype for 301 its actually the location 
-        response += f"Location: http://localhost:8080{mimetype}\r\n\r\n"
-    response += f"Content-Type: {mimetype}\r\n"
-    response += "X-Content-Type-Options: nosniff\r\n"
-    response += "\r\n"
+    response = b'HTTP/1.1 ' + f"{status_code}\r\n".encode()
+    response += b'Content-Length: ' + f"{str(len(content))}\r\n".encode()
+    if (status_code == "301 Moved Permanently"): # (below) THIS is NOT the mimetype for 301 its actually the location 
+        response += b'Location: ' + f"http://localhost:8080{mimetype}\r\n\r\n".encode()
+        return response
+    response += b'Content-Type: '+ f"{mimetype}\r\n".encode()
+    response += b'X-Content-Type-Options: nosniff\r\n'
+    response += b'\r\n'
     # this function returns most of the response, its up the the calling function to handle the body of the request and encode it
     return response
 
 def build200Response():
     content = "Hello there"
     r = buildStaticResponse("200 OK","text/plain; charset=utf-8",content)
-    r += content
-    return r.encode()
+    r += content.encode()
+    return r
 
 def build301Response():
     r = buildStaticResponse("301 Moved Permanently" ,"/hello", "")
-    return r.encode()
+    print(r)
+    return r
 
 def build404Response(message):
     r = buildStaticResponse("404 Not Found", "text/plain; charset=utf-8",message)
-    r += message
-    return r.encode()
+    r += message.encode()
+    return r
