@@ -2,15 +2,16 @@
 
 import socketserver
 import sys
-from tkinter.tix import MAX
 # import headerParser
 from server.osHandlers import addForwardSlash
 # import buildResponse
 from server.request import Request
 from server.router import Router
 from server.user_paths import add_paths
-from server.static_paths import add_paths as other_paths
 from server.html_paths import add_paths as html_paths
+from server.static_paths import add_paths as other_paths
+
+from server.fileHandling import all_bytes_of_file
 # from server.static_paths import add_paths as 
 # import usersResponse 
 # I am testing out WSL and git
@@ -143,10 +144,18 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             print("This is the content length = ", contentLen )
             read_bytes += request.body
             print("this is read_bytes length :", read_bytes)
-
+            ##### what to do with read_bytes after we collect them all?
+            ##### create a parse_file function with read_bytes as the parameter
             sys.stdout.flush()
             sys.stderr.flush()
-
+            #####################################################
+            #TODO: I created a function all_bytes_of_file defined in fileHandling.py
+            # it takes all those bytes im accumulating and then stores them in a dictionary
+            # I created another function sendDict that will send that dictionary to whomever calls it
+            # that sendDict will contain all the bytes of an image file that was uploaded. Cool
+            #
+            #
+            all_bytes_of_file(read_bytes)
             # this is a nice replacement for if-else statments
             self.router.handle_request(request, self)
 

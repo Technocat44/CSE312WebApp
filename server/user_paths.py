@@ -21,7 +21,7 @@ def add_paths(router):
     router.add_route(Route('GET', '/users', list_all))
     router.add_route(Route('PUT', '/users/.', update))
     router.add_route(Route('DELETE', '/users/.', delete))
-    router.add_route(Route('POST', '/.', four_oh_four))
+ #   router.add_route(Route('POST', '/.', four_oh_four))
 
 # POST /users    works
 def create(request, handler):

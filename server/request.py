@@ -15,6 +15,7 @@ class Request:
         [self.method, self.path, self.http_version] = parse_request_line(request_line)
         # part 3, 
         self.headers = parse_headers(headers_as_bytes)
+      
         """
         From this ^^^ I can call, 
         self.body     --to get the body of the request,
@@ -56,6 +57,10 @@ def parse_headers(headers_raw: bytes):
 
 # So if we want the Content-Length of a request we go
 # Request.headers["Content-Length"] elsewhere in my code
+
+# this little function will be called once we have read all the bytes of the file in html_paths.
+# All it does is return all the bytes from the file we read, that won't happen until we hit the last line
+# of the server, and we start handling the routes
 
 if __name__ == '__main__':
    # sample_GET_request = b'GET /hkgkg HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n'
