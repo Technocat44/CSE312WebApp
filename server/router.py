@@ -65,10 +65,12 @@ class Route:
     def __repr__(self):
         return f"This is the path = {self.path}"
 
+
     def is_request_match(self, request: Request):
         if request.method != self.method:
             return False
             # the '^' matches the start of the string
+        # if the current route doesn't equal a route in the request paths
         search_result = re.search('^' + self.path, request.path)
         if search_result:
             return True 

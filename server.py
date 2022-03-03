@@ -2,6 +2,7 @@
 
 import socketserver
 import sys
+from tkinter.tix import MAX
 # import headerParser
 from server.osHandlers import addForwardSlash
 # import buildResponse
@@ -9,6 +10,7 @@ from server.request import Request
 from server.router import Router
 from server.user_paths import add_paths
 from server.static_paths import add_paths as other_paths
+from server.html_paths import add_paths as html_paths
 # from server.static_paths import add_paths as 
 # import usersResponse 
 # I am testing out WSL and git
@@ -73,7 +75,7 @@ HTTP Response:
 
 
 clients = []
-read_bytes = b""
+
 
 
 class MyTCPHandler(socketserver.BaseRequestHandler):
@@ -102,35 +104,51 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     The request, client_address, and server are all TCP socket
     parameters/constructors, that we are passing to the specific super classes
     """
+  
+    # this is creating a bunch of routes and adding them to a route list. Mainly this is used to match
+    # an incoming request to a specific path. 
     def __init__(self, request, client_address, server):
         # router is an object of type Router
         self.router = Router() 
         add_paths(self.router)
         other_paths(self.router)
+        html_paths(self.router)
         super().__init__(request, client_address, server)
-    
+     
+
     def handle(self):
         print("[SERVER INITIALZING]")
         # self.request is the TCP socket connected to the client
+        
+        ###############TEMP Solution for Obj 2#############
+        read_bytes = b""
+        contentLen = 1000 # need a placeholder value to enter the while loop, once inside loop, the actual content-length replaces
+        print("[READING BYTES]")
+        while (len(read_bytes) != contentLen): # should be while I haven't read Content-Length bytes
+            received_data = self.request.recv(1024)
+         
+            clients.append(self.client_address[0])
+            print("\r\n This is the received data straight from the socket \r\n", received_data)
+            start = 0
+            # cleaner way to look at the received data
+            for s in received_data.split(b'\r\n'):
+                print(f"This is line {start}: ", s)
+                start+=1
 
-    
-        received_data = self.request.recv(1024)
-        clients.append(self.client_address[0])
-        print("\r\n This is the received data straight from the socket \r\n", received_data)
-        start = 0
-        # cleaner way to look at the received data
-        for s in received_data.split(b'\r\n'):
-            print(f"This is line {start}: ", s)
-            start+=1
+            request = Request(received_data)
+            if (request.headers.get("Content-Length") != None ):
+                contentLen = request.headers["Content-Length"]
+            else:
+                contentLen = 0
+            print("This is the content length = ", contentLen )
+            read_bytes += request.body
+            print("this is read_bytes length :", read_bytes)
 
-        request = Request(received_data)
-       
+            sys.stdout.flush()
+            sys.stderr.flush()
 
-        sys.stdout.flush()
-        sys.stderr.flush()
-
-        # this is a nice replacement for if-else statments
-        self.router.handle_request(request, self)
+            # this is a nice replacement for if-else statments
+            self.router.handle_request(request, self)
 
 
 
