@@ -1,4 +1,4 @@
-from urllib import request
+
 
 
 class Request:
@@ -15,6 +15,18 @@ class Request:
         [self.method, self.path, self.http_version] = parse_request_line(request_line)
         # part 3, 
         self.headers = parse_headers(headers_as_bytes)
+
+        """
+        After the headers are parsed, we need to take care of the multipart boundary. 
+        It will be in the Content-Type header -->  Content-Type: multipart/form-data; boundary=
+        the boundary will look like this -->       ----WebKitFormBoundaryam94SD6c9rqAs6td
+        B/c reasons we need to find that and then add "--" another two dashes for the full boundary
+        We are going to use that boundary to split() up the multi parts
+          There might be some newline characters mixed in the edges so I might need to strip()
+
+        The last boundary is "--" + <boundary> + "--" \r\n
+         """
+
       
         """
         From this ^^^ I can call, 
@@ -65,6 +77,8 @@ def parse_headers(headers_raw: bytes):
 if __name__ == '__main__':
    # sample_GET_request = b'GET /hkgkg HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n'
    # request = Request(sample_GET_request)
-    sample_htmlform_request = b'POST /image-upload HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nContent-Length: 287\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nOrigin: http://localhost:8080\r\nUpgrade-Insecure-Requests: 1\r\nDNT: 1\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundaryam94SD6c9rqAs6td\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: same-origin\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nReferer: http://localhost:8080/\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n------WebKitFormBoundaryam94SD6c9rqAs6td\r\nContent-Disposition: form-data; name="comment"\r\n\r\nhey\r\n------WebKitFormBoundaryam'
+    sample_htmlform_request = b'POST /image-upload HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nContent-Length: 287\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nOrigin: http://localhost:8080\r\nUpgrade-Insecure-Requests: 1\r\nDNT: 1\r\n'
+    sample_htmlform_request += b'Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryam94SD6c9rqAs6td\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: same-origin\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nReferer: http://localhost:8080/\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9'
+    sample_htmlform_request += b'\r\n\r\n------WebKitFormBoundaryam94SD6c9rqAs6td\r\nContent-Disposition: form-data; name="comment"\r\n\r\nhey\r\n------WebKitFormBoundaryam'
     request = Request(sample_htmlform_request)
     pass 

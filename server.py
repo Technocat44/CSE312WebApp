@@ -115,49 +115,70 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         other_paths(self.router)
         html_paths(self.router)
         super().__init__(request, client_address, server)
-     
+
+    
 
     def handle(self):
         print("[SERVER INITIALZING]")
         # self.request is the TCP socket connected to the client
+        count = 0
+        read_bytes = b''
+        contentLen = 0 
         
         ###############TEMP Solution for Obj 2#############
-        read_bytes = b""
-        contentLen = 1000 # need a placeholder value to enter the while loop, once inside loop, the actual content-length replaces
+         # need a placeholder value to enter the while loop, once inside loop, the actual content-length replaces
         print("[READING BYTES]")
-        while (len(read_bytes) != contentLen): # should be while I haven't read Content-Length bytes
-            received_data = self.request.recv(1024)
-         
-            clients.append(self.client_address[0])
-            print("\r\n This is the received data straight from the socket \r\n", received_data)
-            start = 0
-            # cleaner way to look at the received data
-            for s in received_data.split(b'\r\n'):
-                print(f"This is line {start}: ", s)
-                start+=1
+        # while (len(read_bytes) < contentLen): # should be while I haven't read Content-Length bytes
+        received_data = self.request.recv(1024)
+        
+        clients.append(self.client_address[0])
+        #   print("\r\n This is the received data straight from the socket \r\n", received_data)
+        start = 0
+        # cleaner way to look at the received data
+        for s in received_data.split(b'\r\n'):
+            print(f"This is rcvd data line {start}: ", s)
+            start+=1
 
-            request = Request(received_data)
-            if (request.headers.get("Content-Length") != None ):
-                contentLen = request.headers["Content-Length"]
-            else:
-                contentLen = 0
+        # so if 
+
+        # this one time request should grab the headers and handle all normal request
+        # if the request has an image upload with a ton of bytes, we will enter the while loop          
+        request = Request(received_data)
+        if (request.headers.get("Content-Length") != None ):
+            contentLen = request.headers["Content-Length"]
+        print("this is the content-length >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)
+        # if there is a body in the request (like if this is a GET request) we ensure that read_bytes will be == to contentLen
+        # if there is no body, then the content-length will be zero, and we never enter the while loop since contentLen would not be greater
+        read_bytes += request.body
+        print("this is the type of request.body >>>>>>>>>>>>>>>>>>>>>>>" , type(request.body))
+        print("this is type of read_bytes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>", type(read_bytes))
+        print("this is type of len(read_bytes) >>>>>>>>>>>>>>>>>>>>>>>>", type(len(read_bytes)))
+        print("this is type of contentLen >>>>>>>>>>>>>>>>>>>>>>>>>>>>>", type(contentLen))
+        print("this is the contentLen value >>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)
+        print("this is type of int(contentLen)>>>>>>>>>>>>>>>>>>>>>>>>>", int(contentLen) )
+        # this while loop is later in the handle and after the request = Request() b/c this should only happen if the 
+        # content-length is greater than the len of the body
+        while(int(contentLen) > len(read_bytes)): # if content-length is not greater than read_bytes, we don't enter the loop 
+            count +=1
+            print(f"This is how many times we went back to the socket = {count}")
+
             print("This is the content length = ", contentLen )
-            read_bytes += request.body
-            print("this is read_bytes length :", read_bytes)
-            ##### what to do with read_bytes after we collect them all?
-            ##### create a parse_file function with read_bytes as the parameter
-            sys.stdout.flush()
-            sys.stderr.flush()
-            #####################################################
-            #TODO: I created a function all_bytes_of_file defined in fileHandling.py
-            # it takes all those bytes im accumulating and then stores them in a dictionary
-            # I created another function sendDict that will send that dictionary to whomever calls it
-            # that sendDict will contain all the bytes of an image file that was uploaded. Cool
-            #
-            #
-            all_bytes_of_file(read_bytes)
-            # this is a nice replacement for if-else statments
-            self.router.handle_request(request, self)
+            read_bytes += self.request.recv(1024)
+            print("this is read_bytes length >>>>>>>>>>>>>>>>>>>>>>", len(read_bytes))
+        ##### what to do with read_bytes after we collect them all?
+        ##### create a parse_file function with read_bytes as the parameter
+        sys.stdout.flush()
+        sys.stderr.flush()
+        #####################################################
+        #TODO: I created a function all_bytes_of_file defined in fileHandling.py
+        # it takes all those bytes im accumulating and then stores them in a dictionary
+        # I created another function sendDict that will send that dictionary to whomever calls it
+        # that sendDict will contain all the bytes of an image file that was uploaded. Cool
+        #
+        #
+        all_bytes_of_file(read_bytes)
+        # this is a nice replacement for if-else statments
+        self.router.handle_request(request, self)
 
 
 
