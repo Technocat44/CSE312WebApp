@@ -82,15 +82,25 @@ def formParser(byteArray, count, multipartDict, headers):
    #  TODO: what if the multipart fits all in one request? Then the byteArray will be empty
     print("this is the og byte array, ",byteArray , '\n')
     count+=1
-    if (headers.get("Content-Type") == None):
-        return {}
+    # I don't think this will ever be true, so I can comment it out
+    # if (headers.get("Content-Type") == None):
+    #     return {}
     boundary = getBoundary(headers)
     
    # print("this is the boundary, ",boundary , '\n')
     # lets create a newbyte Array by chopping off the first boundary
     boundary_index = byteArray.find(boundary)
+    # TODO: test out the base case
+
+    print("does the final value of the final multipart end with '--' ? === ",byteArray[(boundary_index) + len(boundary):].startswith(b"--") )
+    if (byteArray[(boundary_index) + len(boundary):].startswith(b"--")):
+        # we know this is the end of the multipart request and we can return 
+        # this is the "base case" for the recursion
+        return multipartDict
     newByteArray = byteArray[(boundary_index) + len(boundary) + len(Request.new_line):]
-  #  print("this is the new byte array with the first boundary cut off", newByteArray, '\n')
+
+    print("this is the new byte array with the first boundary cut off", newByteArray, '\n')
+    print("for the last request the newByteArray should look like this '--'", newByteArray, '\n')
     # now with the new byte array with the top boundary cut off, we can find the next boundary. 
     # finding the next boundary, everything before that will be one whole part of the multipart form
     part_index = newByteArray.find(boundary)
@@ -113,30 +123,36 @@ def formParser(byteArray, count, multipartDict, headers):
     part1headersDict = parse_headers(part1headers)
     print(f"part{count}headersDict",part1headersDict , '\n')
     formofData = part1headersDict.get("Content-Type")
-    if formofData == None:
-        # create a new function that will handle a comment 
-        print("yeah a comment")
+
+    # set the name element as a key and the value to the body in the dictionary 
+    print("THIS is the name element value: ", label_of_part)
+    multipartDict[label_of_part] = part1body 
+
+    formParser(part2, count, multipartDict, headers)
+    # if formofData == None:
+    #     # create a new function that will handle a comment 
+    #     print("yeah a comment")
     
-        multipartDict["comment"] = part1body
-        Request.parts = part1body
-        # TODO: return dictionary for request.parts when should I return it? Once everything is parsed
-        formParser(part2, count, multipartDict,headers)
-        return multipartDict
-       # Request.parts = multipartDict
-        # call that new function
-        #newFunction(part1body) and handles placing this data in the db and posting it to the html page
-        # then call this recursively on the part2
-    else:
-        # going to be an image probably
-        if formofData.startswith("image"):
-            print("yeah an image")
+    #     multipartDict["comment"] = part1body
+    #     Request.parts = part1body
+    #     # TODO: return dictionary for request.parts when should I return it? Once everything is parsed
+    #     formParser(part2, count, multipartDict,headers)
+    #     return multipartDict
+    #    # Request.parts = multipartDict
+    #     # call that new function
+    #     #newFunction(part1body) and handles placing this data in the db and posting it to the html page
+    #     # then call this recursively on the part2
+    # else:
+    #     # going to be an image probably
+    #     if formofData.startswith("image"):
+    #         print("yeah an image")
         
-            multipartDict["upload"] = part1body
-            Request.parts = multipartDict
-            # create a new function that will handle an upload
+    #         multipartDict["upload"] = part1body
+    #         Request.parts = multipartDict
+    #         # create a new function that will handle an upload
             
-        else:
-            print("doesn't start with image")
+    #     else:
+    #         print("doesn't start with image")
 
 def getBoundary(headers):
     # this is what I will actually have to do when the server is up and running
@@ -149,11 +165,21 @@ def getBoundary(headers):
 def grabElementName(part1):
     name_index = part1.find(b"name")
     crlf2_index = part1.find(Request.blank_line_boundary)
-    name_and_label = part1[name_index:crlf2_index]
-    name_and_label_split = name_and_label.split(b"=")
-    # remove the quotes around the label
-    label = name_and_label_split[1].replace(b"\"", b"")
-    return label            
+    # the name label is always name="
+    # so name_index + 5 == name="
+    name_value_array = part1[name_index + 6:]
+    print("this is the name_value_array, ", name_value_array, '\n\n\n') 
+    value_end_index = name_value_array.find(b"\"")
+    # i have this now name_value_array == [upload";filename=""\r\nContent-Type ......] and the value_end_index is the first quote
+    actual_value = name_value_array[:value_end_index]
+    print("the actual_value from the grabElementName function : ", actual_value, '\n\n\n')
+    # the actual value should be this b'comment' or b'upload'
+    # name_and_label = part1[name_index:crlf2_index]
+    # name_and_label_split = name_and_label.split(b"=")
+    # # remove the quotes around the label
+    # label = name_and_label_split[1].replace(b"\"", b"")
+    # return label        
+    return actual_value    
 
    
 
