@@ -1,6 +1,16 @@
 #from server.request import parse_headers
  
 # TODO: This is temporary will delete when not debugging 
+
+byteDict = {"bytes":b''}
+def all_bytes_of_file(read_bytes: bytes):
+    byteDict["bytes"] = read_bytes
+    
+def sendBytes():
+    return byteDict["bytes"]
+
+
+
 new_line = b'\r\n'
 blank_line_boundary = b'\r\n\r\n'
 count = 0
@@ -14,7 +24,7 @@ def parse_headers(headers_raw: bytes):
 
 
 
-byteDict = {}
+byteDict = {"bytes": b''}
 def all_bytes_of_file(read_bytes: bytes):
     byteDict["bytes"] = read_bytes
     
@@ -99,9 +109,19 @@ def getBoundary(byteArray):
     boundary = b"--" + fakeContentType[dashes_index:]
     return boundary
 
+def grabElementName(part1):
+    name_index = part1.find(b"name")
+    crlf2_index = part1.find(blank_line_boundary)
+    name_and_label = part1[name_index:crlf2_index]
+    name_and_label_split = name_and_label.split(b"=")
+    # remove the quotes around the label
+    label = name_and_label_split[1].replace(b"\"", b"")
+    return label
 
 
-def formParser(byteArray,count):
+
+def formParser(byteArray,count, multipartDict):
+    print("multipart dict " ,multipartDict , '\n\n')
     print("this is the og byte array, ",byteArray , '\n')
     count+=1
     boundary = getBoundary(byteArray)
@@ -119,6 +139,8 @@ def formParser(byteArray,count):
     part2 = newByteArray[part_index :]
     print(f"this is part{count+1} that I will pass on , ", part2, '\n')
     print(f"this is part {count} of the multipart form , ", part1, '\n')
+    label_of_part = grabElementName(part1)
+    print(label_of_part)
     # this will separate the headers from the body
     crlf2_index = part1.find(blank_line_boundary)
     newline_index = part1.find(new_line)
@@ -126,15 +148,19 @@ def formParser(byteArray,count):
     part1headers = part1[:crlf2_index]
     part1body = part1[(crlf2_index + len(blank_line_boundary)):].strip() # strip off the trailing whitespace
     print(f"part{count}headers",part1headers , '\n')
-    print(f"part{count}body ", part1body, '\n')
+    print(f"part{count}body ", part1body, "size of body ," ,len(part1body) , '\n')
     part1headersDict = parse_headers(part1headers)
     print(f"part{count}headersDict",part1headersDict , '\n')
     formofData = part1headersDict.get("Content-Type")
     if formofData == None:
         # create a new function that will handle a comment 
         print("yeah a comment")
-        
-        formParser(part2, count)
+    
+        multipartDict["comment"] = part1body
+
+        # TODO: return dictionary for request.parts when should I return it? Once everything is parsed
+        formParser(part2, count, multipartDict)
+        return multipartDict
         # call that new function
         #newFunction(part1body) and handles placing this data in the db and posting it to the html page
         # then call this recursively on the part2
@@ -142,14 +168,17 @@ def formParser(byteArray,count):
         # going to be an image probably
         if formofData.startswith("image"):
             print("yeah an image")
+        
+            multipartDict["upload"] = part1body
+      
             # create a new function that will handle an upload
-            return 0
+            
         else:
             print("doesn't start with image")
-            return 0
+            
 
    
-    
+   
     # headersSplit = formofData.split("=")
     # print(headersSplit)
     # if headersSplit[1] == '"comment"':
@@ -168,8 +197,11 @@ def formParser(byteArray,count):
 if __name__ == '__main__':
    # sample_GET_request = b'GET /hkgkg HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n'
    # request = Request(sample_GET_request)
-    file = b'------WebKitFormBoundarym2rAsFis2C5THAfW\r\nContent-Disposition: form-data; name="comment"\r\n\r\nI am making a fake post request\r\n------WebKitFormBoundarym2rAsFis2C5THAfW\r\nContent-Disposition: form-data; name="upload"; filename="UB.jpg"\r\nContent-Type: image/jpeg\r\n\r\n\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xff\xdb\x00\x84\x00\t\x06\x07\x13\x12\x12\x15\x11\x12\x13\x16\x16\x12\x15\x19\x1d\x1b\x19\x18\x18\x18\x1e\x1f\x18\x1c\x18#\x19!\x1b\x1a\x1a \x18\x1a\x1d( \x1a\x1f%\x1b\x1e"!2!%)+... \x1f383.7(-.+\x01\n\n\n\x0e\r\x0e\x1b\x10\x10\x1a-& %--/-.22--++/2+----/-------------------------------\xff\xc0\x00\x11\x08\x00\xb8\x01\x13\x03\x01\x11\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x1c\x00\x01\x00\x03\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x06\x07\x04\x03\x02\x01\x08\xff\xc4\x00N\x10\x00\x02\x01\x03\x02\x03\x05\x03\x05\x0c\x06\x08\x06\x03\x00\x00\x01\x02\x03\x00\x04\x11\x12!\x05\x061\x07\x13AQa"q\x81\r\n------WebKitFormBoundarym2rAsFis2C5THAfW--\r\n'
+    file = b'------WebKitFormBoundarym2rAsFis2C5THAfW\r\nContent-Disposition: form-data; name="comment"\r\n\r\nI am making a fake post request\r\n------WebKitFormBoundarym2rAsFis2C5THAfW\r\nContent-Disposition: form-data; name="upload"; filename="UB.jpg"\r\nContent-Type: image/jpeg\r\n\r\n\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xff\xdb\x00\x84\x00\t\x06\x07\x13\x12\x12\x15\x11\x12\x13\x16\x16\x12\x15\x19\x1d\x1b\x19\x18\x18\x18\x1e\x1f\x18\x1c\x18#\x19!\x1b\x1a\x1a \x18\x1a\x1d(\r\n \x1a\x1f%\x1b\x1e\r\n\r\n"!2!%)+... \x1f383.7(-.+\x01\n\n\n\x0e\r\x0e\x1b\x10\x10\x1a-& %--/-.22--++/2+----/-------------------------------\xff\xc0\x00\x11\x08\x00\xb8\x01\x13\x03\x01\x11\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x1c\x00\x01\x00\x03\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x05\x06\x07\x04\x03\x02\x01\x08\xff\xc4\x00N\x10\x00\x02\x01\x03\x02\x03\x05\x03\x05\x0c\x06\x08\x06\x03\x00\x00\x01\x02\x03\x00\x04\x11\x12!\x05\x061\x07\x13AQa"q\x81\r\n------WebKitFormBoundarym2rAsFis2C5THAfW--\r\n'
     #request = fileUploadParser(file)
     count = 0
-    request = formParser(file,count)
+    multipartDict = {}
+    request = formParser(file,count, multipartDict)
+    print("the return value of a request should be a dictionary: ", request)
+    print("size of image body , " , len(request["upload"]))
     pass 

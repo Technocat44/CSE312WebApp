@@ -3,8 +3,7 @@
 import server.database as db
 from server.router import Route
 from server.response import generate_response, redirect
-from server.fileHandling import all_bytes_of_file, sendBytes
-from server.request import Request
+from server.request import Request, sendBytes, formParser
 #from server.request import formParser
 
 
@@ -35,13 +34,19 @@ def parse(request, handler):
     The last boundary is "--" + <boundary> + "--" \r\n
         """
     # contains the mutliparts of the request
-    bodyOfImage = bytesOfFile
-
-    boundary = request.headers["Content-Type"]
-
-
+   
+    s = formParser(bytesOfFile, 0, {}, request.headers)
+    # this dynamically adds the dictionary from the formParser to the object we are passing around. 
+    # very cool
+    request.parts = s
+    print(request.parts, '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n')
+   # print("This is the new dictionary that formParser returned, ", s["comment"] , '\n')
+   # print(' formparser upload, ',s["upload"] , '\n')
+    # TODO: Now I have to add these parts from the dictionary to the HTML template 
     r = redirect("/")
     handler.request.sendall(r)
+
+
 
 
 

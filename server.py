@@ -10,8 +10,8 @@ from server.router import Router
 from server.user_paths import add_paths
 from server.html_paths import add_paths as html_paths
 from server.static_paths import add_paths as other_paths
-
 from server.fileHandling import all_bytes_of_file
+# from server.fileHandling import all_bytes_of_file
 # from server.static_paths import add_paths as 
 # import usersResponse 
 # I am testing out WSL and git

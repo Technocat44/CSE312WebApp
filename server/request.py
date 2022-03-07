@@ -1,13 +1,11 @@
 
 
-
-#from server.fileHandling import sendBytes
-
+from server.fileHandling import sendBytes
 
 class Request:
     new_line = b'\r\n'
     blank_line_boundary = b'\r\n\r\n'
-
+  
     # this class creates an object of all the info we need to handle the TCP request
 
     def __init__(self, request: bytes):
@@ -18,8 +16,9 @@ class Request:
         [self.method, self.path, self.http_version] = parse_request_line(request_line)
         # part 3, 
         self.headers = parse_headers(headers_as_bytes)
-
-        #self.parts = formParser(sendBytes())
+        print("This is sendBytes() >>>>>>>>>" , sendBytes(), '\n' )
+        
+        self.parts = {}
 
         """
         After the headers are parsed, we need to take care of the multipart boundary. 
@@ -78,6 +77,85 @@ def parse_headers(headers_raw: bytes):
 # this little function will be called once we have read all the bytes of the file in html_paths.
 # All it does is return all the bytes from the file we read, that won't happen until we hit the last line
 # of the server, and we start handling the routes
+def formParser(byteArray, count, multipartDict, headers):
+    print("multipart dict " ,multipartDict , '\n\n')
+   #  TODO: what if the multipart fits all in one request? Then the byteArray will be empty
+    print("this is the og byte array, ",byteArray , '\n')
+    count+=1
+    if (headers.get("Content-Type") == None):
+        return {}
+    boundary = getBoundary(headers)
+    
+   # print("this is the boundary, ",boundary , '\n')
+    # lets create a newbyte Array by chopping off the first boundary
+    boundary_index = byteArray.find(boundary)
+    newByteArray = byteArray[(boundary_index) + len(boundary) + len(Request.new_line):]
+  #  print("this is the new byte array with the first boundary cut off", newByteArray, '\n')
+    # now with the new byte array with the top boundary cut off, we can find the next boundary. 
+    # finding the next boundary, everything before that will be one whole part of the multipart form
+    part_index = newByteArray.find(boundary)
+    # this is a very important index marker, it represents the index we will return. Then using the original byteArray, the 
+    # for the second call to the next multipart, all we will need is that index and we can parse 
+    part1 = newByteArray[:part_index]
+    part2 = newByteArray[part_index :]
+    print(f"this is part{count+1} that I will pass on , ", part2, '\n')
+    print(f"this is part {count} of the multipart form , ", part1, '\n')
+    label_of_part = grabElementName(part1)
+    print(label_of_part)
+    # this will separate the headers from the body
+    crlf2_index = part1.find(Request.blank_line_boundary)
+    newline_index = part1.find(Request.new_line)
+    print(newline_index)
+    part1headers = part1[:crlf2_index]
+    part1body = part1[(crlf2_index + len(Request.blank_line_boundary)):].strip() # strip off the trailing whitespace
+    print(f"part{count}headers",part1headers , '\n')
+    print(f"part{count}body ", part1body, "size of body ," ,len(part1body) , '\n')
+    part1headersDict = parse_headers(part1headers)
+    print(f"part{count}headersDict",part1headersDict , '\n')
+    formofData = part1headersDict.get("Content-Type")
+    if formofData == None:
+        # create a new function that will handle a comment 
+        print("yeah a comment")
+    
+        multipartDict["comment"] = part1body
+        Request.parts = part1body
+        # TODO: return dictionary for request.parts when should I return it? Once everything is parsed
+        formParser(part2, count, multipartDict,headers)
+        return multipartDict
+       # Request.parts = multipartDict
+        # call that new function
+        #newFunction(part1body) and handles placing this data in the db and posting it to the html page
+        # then call this recursively on the part2
+    else:
+        # going to be an image probably
+        if formofData.startswith("image"):
+            print("yeah an image")
+        
+            multipartDict["upload"] = part1body
+            Request.parts = multipartDict
+            # create a new function that will handle an upload
+            
+        else:
+            print("doesn't start with image")
+
+def getBoundary(headers):
+    # this is what I will actually have to do when the server is up and running
+    contentType = headers["Content-Type"]
+   # fakeContentType = b'multipart/form-data; boundary=----WebKitFormBoundarym2rAsFis2C5THAfW'
+    dashes_index = contentType.find("----")
+    boundary = b"--" + contentType[dashes_index:].encode()
+    return boundary
+
+def grabElementName(part1):
+    name_index = part1.find(b"name")
+    crlf2_index = part1.find(Request.blank_line_boundary)
+    name_and_label = part1[name_index:crlf2_index]
+    name_and_label_split = name_and_label.split(b"=")
+    # remove the quotes around the label
+    label = name_and_label_split[1].replace(b"\"", b"")
+    return label            
+
+   
 
 if __name__ == '__main__':
    # sample_GET_request = b'GET /hkgkg HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n'
@@ -85,5 +163,5 @@ if __name__ == '__main__':
     sample_htmlform_request = b'POST /image-upload HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nContent-Length: 287\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nOrigin: http://localhost:8080\r\nUpgrade-Insecure-Requests: 1\r\nDNT: 1\r\n'
     sample_htmlform_request += b'Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryam94SD6c9rqAs6td\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: same-origin\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nReferer: http://localhost:8080/\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9'
     sample_htmlform_request += b'\r\n\r\n------WebKitFormBoundaryam94SD6c9rqAs6td\r\nContent-Disposition: form-data; name="comment"\r\n\r\nhey\r\n------WebKitFormBoundaryam'
-    request = Request(sample_htmlform_request)
+ #   request = Request(sample_htmlform_request)
     pass 
