@@ -1,6 +1,9 @@
 
 
 
+#from server.fileHandling import sendBytes
+
+
 class Request:
     new_line = b'\r\n'
     blank_line_boundary = b'\r\n\r\n'
@@ -15,6 +18,8 @@ class Request:
         [self.method, self.path, self.http_version] = parse_request_line(request_line)
         # part 3, 
         self.headers = parse_headers(headers_as_bytes)
+
+        #self.parts = formParser(sendBytes())
 
         """
         After the headers are parsed, we need to take care of the multipart boundary. 
