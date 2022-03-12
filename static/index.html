@@ -37,11 +37,12 @@
     </form>
   
     <p>_______________________________________________________________________________________________________ </p>
+    <div class ="user_messages">
     {{loop}}
-    <b>{{comment}}</b>: {{upload}}<br/>
-    <img src="image/{{image_n}}"/> 
+    <b>{{comment}}</b>: {{upload}}
+    <img src="image/{{image_n}}" class="uploaded_images"/> <br/>
     {{end_loop}}
-
+    </div>
     <script src="functions.js"></script>
   </body>
 </html>

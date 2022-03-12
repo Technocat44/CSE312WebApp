@@ -55,6 +55,8 @@ def style(request, handler):
     send_file("static/style.css", "text/css; charset=utf-8", request, handler)
 
 def image(request, handler):
+    print("\n\n\n\n\n\n\n")
+    print("image callback initiated, ++++++++++++++++++++++++++++++++++++++")
     path_prefix = "/image/"
     # we are looking for the first instance of the /image/ tag in the path,  
     image_name = request.path[request.path.find(path_prefix)+len(path_prefix):]

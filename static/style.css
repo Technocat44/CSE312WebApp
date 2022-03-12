@@ -6,3 +6,11 @@ body {
 .my_image {
   width: 120px;
 }
+
+.uploaded_images {
+  width: 120px
+}
+
+.user_messages {
+  float: left;
+}

@@ -78,9 +78,9 @@ def parse_headers(headers_raw: bytes):
 # All it does is return all the bytes from the file we read, that won't happen until we hit the last line
 # of the server, and we start handling the routes
 def formParser(byteArray, count, multipartDict, headers):
-    print("multipart dict " ,multipartDict , '\n\n')
+  #  print("multipart dict " ,multipartDict , '\n\n')
    #  TODO: what if the multipart fits all in one request? Then the byteArray will be empty
-    print("this is the og byte array, ",byteArray , '\n')
+  #  print("this is the og byte array, ",byteArray , '\n')
     count+=1
     # I don't think this will ever be true, so I can comment it out
     # if (headers.get("Content-Type") == None):
@@ -95,14 +95,14 @@ def formParser(byteArray, count, multipartDict, headers):
     print("does the final value of the final multipart end with '--' ? === ",byteArray[(boundary_index) + len(boundary):].startswith(b"--") )
     if (byteArray[(boundary_index) + len(boundary):].startswith(b"--")):
         print("INSIDE THE BASE CASE!!!!!!!!!!!!!!")
-        print("the mutipart dict inside the base case!!!!!!!!!!!!!!!!", multipartDict)
+     #   print("the mutipart dict inside the base case!!!!!!!!!!!!!!!!", multipartDict)
         # we know this is the end of the multipart request and we can return 
         # this is the "base case" for the recursion
         return 
     newByteArray = byteArray[(boundary_index) + len(boundary) + len(Request.new_line):]
 
-    print("this is the new byte array with the first boundary cut off", newByteArray, '\n')
-    print("for the last request the newByteArray should look like this '--'", newByteArray, '\n')
+#    print("this is the new byte array with the first boundary cut off", newByteArray, '\n')
+ #   print("for the last request the newByteArray should look like this '--'", newByteArray, '\n')
     # now with the new byte array with the top boundary cut off, we can find the next boundary. 
     # finding the next boundary, everything before that will be one whole part of the multipart form
     part_index = newByteArray.find(boundary)
@@ -110,8 +110,8 @@ def formParser(byteArray, count, multipartDict, headers):
     # for the second call to the next multipart, all we will need is that index and we can parse 
     part1 = newByteArray[:part_index]
     part2 = newByteArray[part_index :]
-    print(f"this is part{count+1} that I will pass on , ", part2, '\n')
-    print(f"this is part {count} of the multipart form , ", part1, '\n')
+  #  print(f"this is part{count+1} that I will pass on , ", part2, '\n')
+  #  print(f"this is part {count} of the multipart form , ", part1, '\n')
     label_of_part = grabElementName(part1)
     print(label_of_part)
     # this will separate the headers from the body
@@ -121,7 +121,7 @@ def formParser(byteArray, count, multipartDict, headers):
     part1headers = part1[:crlf2_index]
     part1body = part1[(crlf2_index + len(Request.blank_line_boundary)):].strip() # strip off the trailing whitespace
     print(f"part{count}headers",part1headers , '\n')
-    print(f"part{count}body ", part1body, "size of body ," ,len(part1body) , '\n')
+ #   print(f"part{count}body ", part1body, "size of body ," ,len(part1body) , '\n')
     part1headersDict = parse_headers(part1headers)
     print(f"part{count}headersDict",part1headersDict , '\n')
     formofData = part1headersDict.get("Content-Type")
@@ -171,11 +171,11 @@ def grabElementName(part1):
     # the name label is always name="
     # so name_index + 5 == name="
     name_value_array = part1[name_index + 6:]
-    print("this is the name_value_array, ", name_value_array, '\n\n\n') 
+   # print("this is the name_value_array, ", name_value_array, '\n\n\n') 
     value_end_index = name_value_array.find(b"\"")
     # i have this now name_value_array == [upload";filename=""\r\nContent-Type ......] and the value_end_index is the first quote
     actual_value = name_value_array[:value_end_index]
-    print("the actual_value from the grabElementName function : ", actual_value, '\n\n\n')
+  #  print("the actual_value from the grabElementName function : ", actual_value, '\n\n\n')
     # the actual value should be this b'comment' or b'upload'  
     return actual_value    
 
