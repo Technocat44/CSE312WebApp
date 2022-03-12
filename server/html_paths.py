@@ -8,10 +8,10 @@ from server.request import Request, sendBytes, formParser
 
 
 def add_paths(router):
-    router.add_route(Route('POST', '/image-upload', parse))
+    router.add_route(Route('POST', '/image-upload', parseMultiPart))
 
 
-def parse(request, handler):
+def parseMultiPart(request, handler):
     print('\n\n\n\n\n')
     print("I am inside the html_paths file, testing what my all_bytes_from_file produces")
     bytesOfFile = sendBytes()
@@ -35,18 +35,27 @@ def parse(request, handler):
         """
     # contains the mutliparts of the request
    
-    s = formParser(bytesOfFile, 0, {}, request.headers)
+    formParser(bytesOfFile, 0, request.parts, request.headers)
     # this dynamically adds the dictionary from the formParser to the object we are passing around. 
     # very cool
-    request.parts = s
+    # set requst.parts to be the multiPart form boundary dictionary returned by form parsing
+   # print("this is the multipart dict", multipartDict)
+   
+   # request.parts = multipartDict
     print(request.parts, '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n')
-   # print("This is the new dictionary that formParser returned, ", s["comment"] , '\n')
-   # print(' formparser upload, ',s["upload"] , '\n')
+
+    # print("This is the new dictionary that formParser returned, ", s["comment"] , '\n')
+    # print(' formparser upload, ',s["upload"] , '\n')
     # TODO: Now I have to add these parts from the dictionary to the HTML template 
+    commentFromUser = escape_html(request.parts[b"comment"].decode())
+    imageUploaded = request.parts[b"upload"] # don't EVER decode this
+    # TODO: Add the commentFromUser to the datbase and store the filename associated with the comment if possible
+    # TODO: Store the file on my server somewhere. I will have to open the file and write it to disk. Also have to design a naming convention
     r = redirect("/")
     handler.request.sendall(r)
 
-
+def escape_html(hacker):
+    return hacker.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 

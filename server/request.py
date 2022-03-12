@@ -94,9 +94,11 @@ def formParser(byteArray, count, multipartDict, headers):
 
     print("does the final value of the final multipart end with '--' ? === ",byteArray[(boundary_index) + len(boundary):].startswith(b"--") )
     if (byteArray[(boundary_index) + len(boundary):].startswith(b"--")):
+        print("INSIDE THE BASE CASE!!!!!!!!!!!!!!")
+        print("the mutipart dict inside the base case!!!!!!!!!!!!!!!!", multipartDict)
         # we know this is the end of the multipart request and we can return 
         # this is the "base case" for the recursion
-        return multipartDict
+        return 
     newByteArray = byteArray[(boundary_index) + len(boundary) + len(Request.new_line):]
 
     print("this is the new byte array with the first boundary cut off", newByteArray, '\n')
@@ -126,9 +128,11 @@ def formParser(byteArray, count, multipartDict, headers):
 
     # set the name element as a key and the value to the body in the dictionary 
     print("THIS is the name element value: ", label_of_part)
+    # this is how we are setting each section of the multipart in the dictionary, which we can use later in request.parts
     multipartDict[label_of_part] = part1body 
-
+    # recursively call formparser while there are still parts of the form to be parsed out
     formParser(part2, count, multipartDict, headers)
+  
     # if formofData == None:
     #     # create a new function that will handle a comment 
     #     print("yeah a comment")
@@ -155,7 +159,6 @@ def formParser(byteArray, count, multipartDict, headers):
     #         print("doesn't start with image")
 
 def getBoundary(headers):
-    # this is what I will actually have to do when the server is up and running
     contentType = headers["Content-Type"]
    # fakeContentType = b'multipart/form-data; boundary=----WebKitFormBoundarym2rAsFis2C5THAfW'
     dashes_index = contentType.find("----")
@@ -164,7 +167,7 @@ def getBoundary(headers):
 
 def grabElementName(part1):
     name_index = part1.find(b"name")
-    crlf2_index = part1.find(Request.blank_line_boundary)
+  #  crlf2_index = part1.find(Request.blank_line_boundary)
     # the name label is always name="
     # so name_index + 5 == name="
     name_value_array = part1[name_index + 6:]
@@ -173,12 +176,7 @@ def grabElementName(part1):
     # i have this now name_value_array == [upload";filename=""\r\nContent-Type ......] and the value_end_index is the first quote
     actual_value = name_value_array[:value_end_index]
     print("the actual_value from the grabElementName function : ", actual_value, '\n\n\n')
-    # the actual value should be this b'comment' or b'upload'
-    # name_and_label = part1[name_index:crlf2_index]
-    # name_and_label_split = name_and_label.split(b"=")
-    # # remove the quotes around the label
-    # label = name_and_label_split[1].replace(b"\"", b"")
-    # return label        
+    # the actual value should be this b'comment' or b'upload'  
     return actual_value    
 
    
