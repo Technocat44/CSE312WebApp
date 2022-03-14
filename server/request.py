@@ -16,7 +16,7 @@ class Request:
         [self.method, self.path, self.http_version] = parse_request_line(request_line)
         # part 3, 
         self.headers = parse_headers(headers_as_bytes)
-        print("This is sendBytes() >>>>>>>>>" , sendBytes(), '\n' )
+      #  print("This is sendBytes() >>>>>>>>>" , sendBytes(), '\n' )
         
         self.parts = {}
 
@@ -113,7 +113,9 @@ def formParser(byteArray, count, multipartDict, headers):
   #  print(f"this is part{count+1} that I will pass on , ", part2, '\n')
   #  print(f"this is part {count} of the multipart form , ", part1, '\n')
     label_of_part = grabElementName(part1)
-    print(label_of_part)
+    file_name_from_upload = grabFileName(part1)
+    print("commment name , ", label_of_part)
+    print("file name from upload, ", file_name_from_upload)
     # this will separate the headers from the body
     crlf2_index = part1.find(Request.blank_line_boundary)
     newline_index = part1.find(Request.new_line)
@@ -124,12 +126,13 @@ def formParser(byteArray, count, multipartDict, headers):
  #   print(f"part{count}body ", part1body, "size of body ," ,len(part1body) , '\n')
     part1headersDict = parse_headers(part1headers)
     print(f"part{count}headersDict",part1headersDict , '\n')
-    formofData = part1headersDict.get("Content-Type")
 
     # set the name element as a key and the value to the body in the dictionary 
     print("THIS is the name element value: ", label_of_part)
     # this is how we are setting each section of the multipart in the dictionary, which we can use later in request.parts
     multipartDict[label_of_part] = part1body 
+    if file_name_from_upload != None:
+      multipartDict[b"fileName"] = file_name_from_upload
     # recursively call formparser while there are still parts of the form to be parsed out
     formParser(part2, count, multipartDict, headers)
   
@@ -179,7 +182,21 @@ def grabElementName(part1):
     # the actual value should be this b'comment' or b'upload'  
     return actual_value    
 
-   
+def grabFileName(part1):
+    
+    file_name_index = part1.find(b"filename")
+    if file_name_index == -1:
+      return None
+    print("\n\n\n\n\n\n\n\n\n\n")
+    print("inside the grabFileName function\n")
+    print("this is the filename index", file_name_index)
+    new_line_index = part1.find(b"\r\n")
+    file_name_array = part1[file_name_index + 10:new_line_index]
+    file_name_end_index = file_name_array.find(b".")
+    if file_name_end_index != -1:
+      name_of_file = file_name_array[:file_name_end_index]
+      return name_of_file
+    return None
 
 if __name__ == '__main__':
    # sample_GET_request = b'GET /hkgkg HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n'

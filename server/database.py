@@ -11,9 +11,11 @@ to check out what is happening in the db follow these steps:
   2. in terminal enter >>> docker ps
   3. >>> docker exec -it <paste image id of database> /bin/bash    ||| this can also be done with our web app
   4. >>> ls
-  5. >>> mysql
-  6. >>> show databases
-  7. >>> 
+  5. >>> mongo
+  6. >>> show dbs
+  7. >>> use cse312
+  8. >>> show collections
+  9. >>> db.collection_name.find( {} ) /// this will show all documents in the collection
 """
 
 """
@@ -36,10 +38,14 @@ db = mongo_client['cse312']
 
 users_collection = db['users'] # one collection for users
 users_id_collection = db["users_id"] # one collection for users ids
+comment_and_image_name_from_html_collection = db["comment_image_name"] # a collection for uploaded comments and image names
 
 
 #print(mongo_client.list_database_names())
 #chat_collection.insert()
+def store_comment(comment: bytes, fileName: bytes):
+  comment_and_image_name_from_html_collection.insert_one({"comment" : comment, "imageName" : fileName })
+
 
 # when ever we need a new id, we go into our file collection
 # find one document, (that's all we will have in this collection)

@@ -1,4 +1,5 @@
 
+import secrets
 import os
 import server.database as db
 from server.router import Route
@@ -29,37 +30,57 @@ def parseMultiPart(request, handler):
     # TODO: Now I have to add these parts from the dictionary to the HTML template 
     commentFromUser = escape_html(request.parts[b"comment"].decode())
     imageUploaded = request.parts[b"upload"] # don't EVER decode this
-    # TODO: Add the commentFromUser to the datbase and store the filename associated with the comment if possible
+    # TODO: Add the commentFromUser to the database and store the filename associated with the comment if possible
     # TODO: Store the file on my server somewhere. I will have to open the file and write it to disk. Also have to design a naming convention
-    print("image uploaded XXXXXXXXXXXXXXXXXXXXXXXX ", imageUploaded)
+   # print("image uploaded XXXXXXXXXXXXXXXXXXXXXXXX ", imageUploaded)
     # if a user only writes in a comment I don't want to accidently write an empty image
-    if imageUploaded != b"":
-        print("hey we entered the if to check if the image has a bytes in it XXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        storeImageUpload(imageUploaded)
+    # if imageUploaded != b"":
+    #     print("hey we entered the if to check if the image has a bytes in it XXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    #     with open("image0.jpg", "wb") as out_image:
+    #         out_image.write(imageUploaded)
+   # image_path = "../static/image/cat.jpg"
+    # with open(os.path.join(os.getcwd() + "/static/image/cat.jpg"), "rb") as f:
+    #     serve = f.read()  
+    randomNameOfImage = request.parts.get(b"fileName", 0)
+    """
+    store the image file name in the db. ### need to add the .jpg to the end for easier lookup once retrieved from db
+    link it to the comment.
 
-    r = redirect("/")
-    handler.request.sendall(r)
+    for ex:
+        {"comment" : "check out my pic", "imageName" : "ACoolPicture00dankv3i5n4"}
+        {"comment" : "hey" , "imageName" : "" }
+    """
+    print("this is the nameOfOGImage: This should be the name if there is a file name, should be 0 if there isn't",randomNameOfImage)
+    if randomNameOfImage == 0:
+        db.store_comment(commentFromUser, None)
+        r = redirect("/")
+        handler.request.sendall(r)
+    else:
+        side_effect_randomNameMix = storeImageUpload(imageUploaded, randomNameOfImage)
+        # do the work for the database here as well then to ensure the comment has an image
+        db.store_comment(commentFromUser, side_effect_randomNameMix)  ###TODO: ## need image with random chars
+        r = redirect("/")
+        handler.request.sendall(r)
 
 def escape_html(hacker):
     return hacker.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 
-def storeImageUpload(image):
-    print("hey we are inside the storeImageUpload XXXXXXXXXXXXXXXXXXXXXXXXXXX heres the imageID :", imageID)
+def storeImageUpload(image, nameOfOG):
+    print("hey we are inside the storeImageUpload XXXXXXXXXXXXXXXXXXXXXXXXXXX")
     # naming convention
-    imageID += 1
-    print(imageID)
-    filePath = f"static/image/image{imageID}.jpg"
-    print("filepath: ",filePath)
-    with open(f"static/image/image{imageID}.jpg", "wb") as out_image:
-        print(out_image)
-        out_image.write(image)
-        print("the write out put ",out_image.write(image))
-        out_image.close()
+    randomName = randomNameForImages()
+    randomNameMix = nameOfOG.decode() + randomName   
+    with open(os.path.join(os.getcwd() + f"/static/image/{randomNameMix}.jpg"), "wb") as out_file:
+        out_file.write(image)
+        out_file.close()
+    return randomNameMix
 
-def randomName():
-    # TODO: improt secrets and create a random name for an image concatenated with the file upload name. This way
+def randomNameForImages():
+    # TODO: import secrets and create a random name for an image concatenated with the file upload name. This way
     # I cam safley store the file on disk and not risk it being the same name, and I can then still read the file name and
     # know what image it is. 
-    return 0
+    rand_token = secrets.token_urlsafe(7)
+    print("this is the randomtoken :", rand_token)
+    return rand_token
