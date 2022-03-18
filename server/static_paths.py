@@ -5,13 +5,13 @@ from server.template_engine import render_template
 import server.database as db
 import json
 from os.path import exists
+
 """
 This method creates a Route object. A route object has a 
     -method >>> the request method such as GET, or POST
     -path   >>> the route the request wants
     -action >>> the callback function to handle the specific route
 """
-captionList = []
 # this method replaces the if-else
 def add_paths(router):
     router.add_route(Route('GET', "/hi", hi))
@@ -40,7 +40,7 @@ def home(request, handler):
     #             {"comment": "nothing much", "upload":"", "image_n": "elephant.jpg"},
     #             {"comment": "very cool", "upload": "", "image_n": "eagle.jpg"},
     #             {"comment": "wow", "upload": "", "image_n" : "dog.jpg"}]
-
+  
     #### i think I have to json dumps
     message = db.list_all_comments()
     # creating a simple list for demoing purposes, need to set this up in my database
@@ -98,6 +98,11 @@ def send_file(filename, mimetype, request, handler):
         response = generate_response(body, mimetype, '200 OK')
         handler.request.sendall(response)
 
-
+# this is going to generate an xsrf token on page load and insert it into the html form and store it in the db
+# def generateXSRFToken():
+#     token = secrets.token_urlsafe(15)
+#     db.store_xsrf_token(token)
+#     newTemplate = insert_token(token) # this function is from template_engine and adds the token to the page
+#     return newTemplate
 
   

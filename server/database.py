@@ -39,18 +39,25 @@ db = mongo_client['cse312']
 users_collection = db['users'] # one collection for users
 users_id_collection = db["users_id"] # one collection for users ids
 comment_and_image_name_from_html_collection = db["comment_image_name"] # a collection for uploaded comments and image names
-
+xsrf_collection = db["tokens"] # a collection of xsrf token's created on homepage load
 
 #print(mongo_client.list_database_names())
 #chat_collection.insert()
 # we can store a comment and image name that a user sent as a request.
 # if they only send a comment, the imageName will be None
+def store_xsrf_token(token):
+  xsrf_collection.insert_one({"token" : token})
+
 def store_comment_and_image(comment: str, fileName: str):
   comment_and_image_name_from_html_collection.insert_one({"comment" : comment, "imageName" : fileName })
 
 def store_comment_only(comment: str):
   comment_and_image_name_from_html_collection.insert_one({"comment": comment})
 
+def verify_tokens():
+  all_tokens = xsrf_collection.find( {}, {"_id":0} )
+  return list(all_tokens)
+  
 # retreive all comments and image Names that have been posted by all users
 def list_all_comments():
   all_comments = comment_and_image_name_from_html_collection.find( {} , {"_id": 0})

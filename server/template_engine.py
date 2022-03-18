@@ -1,7 +1,9 @@
 #  this function gets called from the home path in static_paths
 # it takes in the path of where the html_file is stored
 # and the data I want to display
-from modulefinder import ReplacePackage
+
+import secrets
+import server.database as db
 
 
 def render_template(html_filename, data):
@@ -10,6 +12,7 @@ def render_template(html_filename, data):
         template = html_file.read()
         # call the replace_placeholders with the html file as a string, and that data
      #   template = replace_placeholders(template, data)
+        template = insert_token(secrets.token_urlsafe(15))
         template = render_loop(template, data)
         return template
 
@@ -57,11 +60,11 @@ def replace_if_holders(template, data):
 def replace_else_holders(template, data):
     else_temp = template
 
-    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-    print("start of else_holders")
-    print(else_temp)
-    print("end of else_holders")
-    print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    # print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+    # print("start of else_holders")
+    # print(else_temp)
+    # print("end of else_holders")
+    # print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
     if data == "":
         else_temp = ""
        # print("this is the replaced temp if there is no image in the database", else_temp)
@@ -87,7 +90,7 @@ def replace_loopholders(template, data):
     else_template = loop_template[else_index + len(else_tag) : end_if_index]
     if_content = ""
     for placeholder in data.keys():
-        print("placeholder :",placeholder)
+        # print("placeholder :",placeholder)
         if len(data.keys()) == 1:
             if placeholder == 'comment':
                 if_content += replace_if_holders(if_template, data[placeholder])
@@ -103,15 +106,15 @@ def replace_loopholders(template, data):
                 if_content += replace_if_holders(if_template, data["comment"] )
             else:
                 if_content += replace_else_holders(else_template, data[placeholder])
-    print("this is the loop template", loop_template, '\n\n\n\n\n')
-    print("the if_content", if_content, "\n\n\n\n\n")
+    # print("this is the loop template", loop_template, '\n\n\n\n\n')
+    # print("the if_content", if_content, "\n\n\n\n\n")
     final_loop = loop_template[:if_index] + if_content + loop_template[end_if_index + len(end_if_tag):]
-    print("the final_loop: ", final_loop, "\n\n\n\n\n")
+    # print("the final_loop: ", final_loop, "\n\n\n\n\n")
     return final_loop
 
 def render_loop(template, data):
     if "loop_data" in data:
-        print("This is the data in the loop_data. :" , data)
+        # print("This is the data in the loop_data. :" , data)
         loop_start_tag = "{{loop}}"
         loop_end_tag = "{{end_loop}}"
 
@@ -140,7 +143,7 @@ def render_loop(template, data):
         #         { "comment" : "another comment"}
         # TODO: find a way to not place all data in the loop. have to examine the replace_placeholders function and how its handling it
         for single_piece_of_content in loop_data:
-            print("this is single piece of content >>>>>>>>>>, ", single_piece_of_content )
+            # print("this is single piece of content >>>>>>>>>>, ", single_piece_of_content )
 
             loop_content += replace_loopholders(loop_template, single_piece_of_content)
           
@@ -151,6 +154,16 @@ def render_loop(template, data):
         final_content = template[:start_index] + loop_content + template[end_index+len(loop_end_tag):]
 
         return final_content
+
+    
+def insert_token(token):
+    with open("static/index.html") as html:
+        template = html.read()
+        token_tag = "{{token_val}}"
+        template = template.replace(token_tag, token)
+        db.store_xsrf_token(token)
+        print(template)
+        return template
 
 if __name__ == '__main__':
     

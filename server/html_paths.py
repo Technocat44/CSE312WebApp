@@ -1,6 +1,7 @@
 
 import secrets
 import os
+from xmlrpc.client import ResponseError
 import server.database as db
 from server.router import Route
 from server.response import generate_response, redirect
@@ -22,6 +23,15 @@ def parseMultiPart(request, handler):
     # this dynamically adds the dictionary from the formParser to the object we are passing around. 
     # very cool
     print(request.parts, '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n\n')
+
+
+    # retrieve created tokens from the db, check to verify if the xsrf_token is in the request.parts dictionary.
+    # if it is, great we continue processing the request, if not, we send a 403 forbidden response
+    checker = token_checker(request, handler)
+    print("this is what checker returns " , checker)
+    if checker == 0:
+        return 
+           
 
     # TODO: Now I have to add these parts from the dictionary to the HTML template 
     commentFromUser = escape_html(request.parts[b"comment"].decode())
@@ -80,3 +90,17 @@ def storeImageUpload(image, nameOfOG):
 
  
 
+def token_checker(request, handler):
+    tokenList = db.verify_tokens()
+    print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
+    print(tokenList)
+    tokenCheck = request.parts.get(b"xsrf_token", 0)
+    for tokenDict in tokenList:
+        print("Token dict, ", tokenDict)
+        print("token from request , ", tokenCheck.decode())
+        if tokenCheck.decode() in tokenDict.values():
+            return 1
+    print("Nope not in here")
+    response = generate_response(b"Forbidden. You do not have access. Submission denied.", 'text/plain; charset=utf-8', '403 Forbidden')
+    handler.request.sendall(response)
+    return 0

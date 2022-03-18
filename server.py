@@ -133,11 +133,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         
         clients.append(self.client_address[0])
         #   print("\r\n This is the received data straight from the socket \r\n", received_data)
-        start = 0
+        # start = 0
         # cleaner way to look at the received data
-        for s in received_data.split(b'\r\n'):
-            print(f"This is rcvd data line {start}: ", s)
-            start+=1
+        # for s in received_data.split(b'\r\n'):
+        #     print(f"This is rcvd data line {start}: ", s)
+        #     start+=1
 
         # so if 
 
@@ -146,25 +146,25 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request = Request(received_data)
         if (request.headers.get("Content-Length") != None ):
             contentLen = request.headers["Content-Length"]
-        print("this is the content-length >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)
+        # print("this is the content-length >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)
         # if there is a body in the request (like if this is a GET request) we ensure that read_bytes will be == to contentLen
         # if there is no body, then the content-length will be zero, and we never enter the while loop since contentLen would not be greater
         read_bytes += request.body
-        print("this is the type of request.body >>>>>>>>>>>>>>>>>>>>>>>" , type(request.body))
-        print("this is type of read_bytes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>", type(read_bytes))
-        print("this is type of len(read_bytes) >>>>>>>>>>>>>>>>>>>>>>>>", type(len(read_bytes)))
-        print("this is type of contentLen >>>>>>>>>>>>>>>>>>>>>>>>>>>>>", type(contentLen))
-        print("this is the contentLen value >>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)
-        print("this is type of int(contentLen)>>>>>>>>>>>>>>>>>>>>>>>>>", int(contentLen) )
+        # print("this is the type of request.body >>>>>>>>>>>>>>>>>>>>>>>" , type(request.body))
+        # print("this is type of read_bytes >>>>>>>>>>>>>>>>>>>>>>>>>>>>>", type(read_bytes))
+        # print("this is type of len(read_bytes) >>>>>>>>>>>>>>>>>>>>>>>>", type(len(read_bytes)))
+        # print("this is type of contentLen >>>>>>>>>>>>>>>>>>>>>>>>>>>>>", type(contentLen))
+        # print("this is the contentLen value >>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)
+        # print("this is type of int(contentLen)>>>>>>>>>>>>>>>>>>>>>>>>>", int(contentLen) )
         # this while loop is later in the handle and after the request = Request() b/c this should only happen if the 
         # content-length is greater than the len of the body
         while(int(contentLen) > len(read_bytes)): # if content-length is not greater than read_bytes, we don't enter the loop 
             count +=1
-            print(f"This is how many times we went back to the socket = {count}")
+            # print(f"This is how many times we went back to the socket = {count}")
 
-            print("This is the content length = ", contentLen )
+            # print("This is the content length = ", contentLen )
             read_bytes += self.request.recv(1024)
-            print("this is read_bytes length >>>>>>>>>>>>>>>>>>>>>>", len(read_bytes))
+            # print("this is read_bytes length >>>>>>>>>>>>>>>>>>>>>>", len(read_bytes))
         ##### what to do with read_bytes after we collect them all?
         ##### create a parse_file function with read_bytes as the parameter
         sys.stdout.flush()

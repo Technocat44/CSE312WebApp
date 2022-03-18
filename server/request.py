@@ -1,5 +1,5 @@
 
-
+import secrets
 from server.fileHandling import sendBytes
 
 class Request:
@@ -49,18 +49,18 @@ def split_request(request:bytes):
 
     # everything before the first new line char is the request line
     request_line = request[:first_new_line_boundary_index]
-    print("request line: ", request_line)
+    # print("request line: ", request_line)
     # everything inbetween the first new line char and the \r\n\r\n is the headers
     headers_as_bytes = request[(first_new_line_boundary_index + len(Request.new_line)):blank_line_boundary_index]
-    print("headers as bytes: ", headers_as_bytes)
+    # print("headers as bytes: ", headers_as_bytes)
     # everything after the \r\n\r\n
     body = request[(blank_line_boundary_index + len(Request.blank_line_boundary)):]
-    print("body: ", body)
+    # print("body: ", body)
     return [request_line, headers_as_bytes, body]
 
 # I know the request line is a string so its safe to decode and split it
 def parse_request_line(request_line: bytes):
-    print("This is what the request line split is : ", request_line.decode().split(" "))
+    # print("This is what the request line split is : ", request_line.decode().split(" "))
     return request_line.decode().split(" ")
 
 def parse_headers(headers_raw: bytes):
@@ -95,6 +95,7 @@ def formParser(byteArray, count, multipartDict, headers):
     print("does the final value of the final multipart end with '--' ? === ",byteArray[(boundary_index) + len(boundary):].startswith(b"--") )
     if (byteArray[(boundary_index) + len(boundary):].startswith(b"--")):
         print("INSIDE THE BASE CASE!!!!!!!!!!!!!!")
+        
      #   print("the mutipart dict inside the base case!!!!!!!!!!!!!!!!", multipartDict)
         # we know this is the end of the multipart request and we can return 
         # this is the "base case" for the recursion
@@ -197,6 +198,8 @@ def grabFileName(part1):
       name_of_file = file_name_array[:file_name_end_index]
       return name_of_file
     return None
+  
+
 
 if __name__ == '__main__':
    # sample_GET_request = b'GET /hkgkg HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nsec-ch-ua: " Not A;Brand";v="99", "Chromium";v="98", "Google Chrome";v="98"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nDNT: 1\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n\r\n'
