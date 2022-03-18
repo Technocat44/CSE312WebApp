@@ -1,3 +1,7 @@
+To open file folder in Ubuntu:
+
+    - explorer.exe .
+
 Docker:
 
 After installing Docker, build a Dockerfile

@@ -67,7 +67,7 @@ def image(request, handler):
     # in the db and only add files that are uploaded. 
     # if image_name not in db list:
         # send a 404
-    valid_mime_types = {"jpg": "jpeg", "png": "png", "default": "jpeg"}
+    valid_mime_types = {"jpg": "jpeg", "png": "png", "ico":"ico", "default": "jpeg", }
   
     """
     If you want it to be dynamic, I would store a mapping of file extensions to MIME types and have a
