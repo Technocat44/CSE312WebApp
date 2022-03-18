@@ -2,7 +2,9 @@
 from server.router import Route
 from server.response import generate_response, redirect
 from server.template_engine import render_template
-
+import server.database as db
+import json
+from os.path import exists
 """
 This method creates a Route object. A route object has a 
     -method >>> the request method such as GET, or POST
@@ -34,15 +36,16 @@ def hello(request, handler):
     handler.request.sendall(r)
  
 def home(request, handler):
-    message = [{"comment": "Whats up", "upload": "", "image_n": "kitten.jpg"},
-                {"comment": "nothing much", "upload":"", "image_n": "elephant.jpg"},
-                {"comment": "very cool", "upload": "", "image_n": "eagle.jpg"},
-                {"comment": "wow", "upload": "", "image_n" : "dog.jpg"}]
+    # message = [{"comment": "Whats up", "upload": "", "image_n": "kitten.jpg"},
+    #             {"comment": "nothing much", "upload":"", "image_n": "elephant.jpg"},
+    #             {"comment": "very cool", "upload": "", "image_n": "eagle.jpg"},
+    #             {"comment": "wow", "upload": "", "image_n" : "dog.jpg"}]
+
+    #### i think I have to json dumps
+    message = db.list_all_comments()
     # creating a simple list for demoing purposes, need to set this up in my database
    # captionList.append({"comment" :request.parts.get(b"comment", b""),"upload" :request.parts.get(b"upload", b"")})
-    content = render_template("static/index.html", {"image_name": "Kitten!",  
-                                                    "image_filename": "kitten.jpg", 
-                                                    "loop_data": message} )
+    content = render_template("static/index.html",{"loop_data": message} )
     res = generate_response(content.encode(), "text/html; charset=utf-8", "200 OK")
     handler.request.sendall(res)
    #TODO: set this back once I am done demoing send_file(content.encode(), "text/html; charset=utf-8", request, handler)
@@ -83,7 +86,10 @@ def image(request, handler):
         new_image_name = image_name[:find_extension] + "." + file_extension
 
     print ("new image name: ", new_image_name)
-    send_file('static/image/' + new_image_name, f"image/{file_extension}", request, handler)
+    # checks if the file path is valid before trying to open and read it
+    file_exist = exists('static/image/' + new_image_name)
+    if file_exist:
+        send_file('static/image/' + new_image_name, f"image/{file_extension}", request, handler)
 
 # this handles the files in my static folder, such as images or index.html
 def send_file(filename, mimetype, request, handler):
@@ -91,5 +97,7 @@ def send_file(filename, mimetype, request, handler):
         body = content.read()
         response = generate_response(body, mimetype, '200 OK')
         handler.request.sendall(response)
+
+
 
   

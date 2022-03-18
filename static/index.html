@@ -9,14 +9,19 @@
     <p id="paragraph">This text is from the HTML file 🙂</p>
 
     <!--<p>Here's a flamingo:</p>-->
-    <p>Here's a {{image_name}}:</p>
+    <p>Here's a puppy!</p>
 
-   <!-- <img src="image/flamingo.jpg" alt="It's a flamingo" class="my_image" /> -->
-    <img src="image/{{image_filename}}" alt="It's a {{image_name}}" class="my_image"/>
+    <!-- <img src="image/flamingo.jpg" alt="It's a flamingo" class="my_image" /> -->
+    <img
+      src="image/dog.jpg"
+      alt="It's a dog"
+      class="my_image"
+    />
     <!--<img src="image/cat.jpg" alt="It's a flamingo" class="my_image" /> -->
 
-    
-    <p> ____________________________________________________________________________________________________ </p>
+    <p>
+      ____________________________________________________________________________________________________
+    </p>
     <form
       action="/image-upload"
       id="image-form"
@@ -28,20 +33,27 @@
         id="image-form-comment"
         name="comment"
         cols="40"
-        rows="6" 
+        rows="6"
       ></textarea>
       <br />
       <label for="form-file">Image: </label>
       <input id="form-file" type="file" name="upload" />
       <input type="submit" value="Post" />
     </form>
-  
-    <p>_______________________________________________________________________________________________________ </p>
-    <div class ="user_messages">
-    {{loop}}
-    <b>{{comment}}</b>: {{upload}}
-    <img src="image/{{image_n}}" class="uploaded_images"/> <br/>
-    {{end_loop}}
+
+    <p>
+      _______________________________________________________________________________________________________
+    </p>
+    <div class="user_messages">
+      {{loop}}
+      {{if no_image}}
+      <b>{{comment}}</b>
+      {{else}}
+      <img src="image/{{imageName}}" alt="" class="uploaded_images" /> 
+      {{end_if}}
+      <p> ________________________________________________________</p>
+      {{end_loop}}
+      
     </div>
     <script src="functions.js"></script>
   </body>

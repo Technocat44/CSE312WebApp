@@ -43,9 +43,18 @@ comment_and_image_name_from_html_collection = db["comment_image_name"] # a colle
 
 #print(mongo_client.list_database_names())
 #chat_collection.insert()
-def store_comment(comment: bytes, fileName: bytes):
+# we can store a comment and image name that a user sent as a request.
+# if they only send a comment, the imageName will be None
+def store_comment_and_image(comment: str, fileName: str):
   comment_and_image_name_from_html_collection.insert_one({"comment" : comment, "imageName" : fileName })
 
+def store_comment_only(comment: str):
+  comment_and_image_name_from_html_collection.insert_one({"comment": comment})
+
+# retreive all comments and image Names that have been posted by all users
+def list_all_comments():
+  all_comments = comment_and_image_name_from_html_collection.find( {} , {"_id": 0})
+  return list(all_comments)
 
 # when ever we need a new id, we go into our file collection
 # find one document, (that's all we will have in this collection)
