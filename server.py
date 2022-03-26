@@ -8,8 +8,10 @@ from server.osHandlers import addForwardSlash
 from server.request import Request
 from server.router import Router
 from server.user_paths import add_paths
+from server.websocket import add_paths as websocket_paths
 from server.html_paths import add_paths as html_paths
 from server.static_paths import add_paths as other_paths
+
 from server.fileHandling import all_bytes_of_file
 # from server.fileHandling import all_bytes_of_file
 # from server.static_paths import add_paths as 
@@ -112,8 +114,11 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # router is an object of type Router
         self.router = Router() 
         add_paths(self.router)
+        websocket_paths(self.router)
         other_paths(self.router)
         html_paths(self.router)
+   
+       
         super().__init__(request, client_address, server)
 
     
@@ -121,6 +126,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
         print("[SERVER INITIALZING]")
         # self.request is the TCP socket connected to the client
+    
         count = 0
         read_bytes = b''
         contentLen = 0 
@@ -133,17 +139,18 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         
         clients.append(self.client_address[0])
         #   print("\r\n This is the received data straight from the socket \r\n", received_data)
-        # start = 0
+        start = 0
         # cleaner way to look at the received data
-        # for s in received_data.split(b'\r\n'):
-        #     print(f"This is rcvd data line {start}: ", s)
-        #     start+=1
+        for s in received_data.split(b'\r\n'):
+            print(f"This is rcvd data line {start}: ", s)
+            start+=1
 
         # so if 
 
         # this one time request should grab the headers and handle all normal request
         # if the request has an image upload with a ton of bytes, we will enter the while loop          
         request = Request(received_data)
+        print(request.headers)
         if (request.headers.get("Content-Length") != None ):
             contentLen = request.headers["Content-Length"]
         # print("this is the content-length >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)

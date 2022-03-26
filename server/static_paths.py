@@ -36,6 +36,7 @@ def hello(request, handler):
     handler.request.sendall(r)
  
 def home(request, handler):
+    print("hey we're home")
     # message = [{"comment": "Whats up", "upload": "", "image_n": "kitten.jpg"},
     #             {"comment": "nothing much", "upload":"", "image_n": "elephant.jpg"},
     #             {"comment": "very cool", "upload": "", "image_n": "eagle.jpg"},

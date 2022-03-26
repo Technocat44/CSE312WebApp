@@ -37,7 +37,9 @@ class Router:
     """
 
     def add_route(self, route):
+        print("this is route; ", route)
         self.routes.append(route)
+       
 
     # this method handles what callback function should handle a specific request
     # it will go through all the routes that are added,

@@ -2,7 +2,7 @@
   <head>
     <title>CSE312 Sample Front End</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <link rel="icon" type="image/x-icon" href="/image/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/image/favicon.ico" />
   </head>
   <body onload="welcome();">
     <h1>&#9820; CSE312 Sample Page</h1>
@@ -13,11 +13,7 @@
     <p>Here's a puppy!</p>
 
     <!-- <img src="image/flamingo.jpg" alt="It's a flamingo" class="my_image" /> -->
-    <img
-      src="image/dog.jpg"
-      alt="It's a dog"
-      class="my_image"
-    />
+    <img src="image/dog.jpg" alt="It's a dog" class="my_image" />
     <!--<img src="image/cat.jpg" alt="It's a flamingo" class="my_image" /> -->
 
     <p>
@@ -29,7 +25,7 @@
       method="post"
       enctype="multipart/form-data"
     >
-      <input value= {{token_val}} name="xsrf_token">
+      <input value="{{token_val}}" name="xsrf_token" hidden />
       <label for="image-form-comment">Comment: </label>
       <textarea
         id="image-form-comment"
@@ -47,16 +43,34 @@
       _______________________________________________________________________________________________________
     </p>
     <div class="user_messages">
-      {{loop}}
-      {{if no_image}}
+      {{loop}} {{if no_image}}
       <b>{{comment}}</b>
       {{else}}
-      <img src="image/{{imageName}}" alt="" class="uploaded_images" /> 
+      <img src="image/{{imageName}}" alt="" class="uploaded_images" />
       {{end_if}}
-      <p> ________________________________________________________</p>
+      <p>________________________________________________________</p>
       {{end_loop}}
-      
     </div>
+
+    <p>
+      __________________________________________________________________________________________________
+    </p>
+    <label for="chat-comment">Chat: </label>
+    <input id="chat-comment" type="text" name="comment" />
+
+    <button onclick="sendMessage()">Send</button>
+
+    <div id="chat"></div>
+
+    <br />
+    <button onclick="startVideo()">Start My Video</button>
+    <br />
+    <button onclick="connectWebRTC()">Start Video Chat</button>
+    <br />
+
+    <video id="myVideo" autoplay muted></video>
+    <br />
+    <video id="otherVideo" autoplay></video>
     <script src="functions.js"></script>
   </body>
 </html>

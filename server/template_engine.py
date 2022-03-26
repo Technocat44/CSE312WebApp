@@ -162,14 +162,14 @@ def insert_token(token):
         token_tag = "{{token_val}}"
         template = template.replace(token_tag, token)
         db.store_xsrf_token(token)
-        print(template)
+        # print(template)
         return template
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
     
-    sampleDictList = [{"comment": "this is a 1 comment", "imageName" : "acoolpickrkfkdfk.jpg"}, {"comment": "this 2 is a comment"}]
-    message = { "loop_data": sampleDictList} 
-    con = render_template("static/index.html", message)
-    print('\n\n\n\n\n\n\n')
-    print(con)
+#     sampleDictList = [{"comment": "this is a 1 comment", "imageName" : "acoolpickrkfkdfk.jpg"}, {"comment": "this 2 is a comment"}]
+#     message = { "loop_data": sampleDictList} 
+#     con = render_template("static/index.html", message)
+#     print('\n\n\n\n\n\n\n')
+#     print(con)
 
