@@ -125,7 +125,7 @@ IMPORTANT!
      docker-compose up -d 
 • To rebuild the containers
      docker-compose build
-     docker-compose up --build (rebuild images and run containers)
+     docker-compose up --build --force-recreate
 • To restart the containers
      docker-compose restart
 

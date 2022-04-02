@@ -11,6 +11,21 @@ body {
   width: 120px
 }
 
+.row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
 .user_messages {
   float: left;
+  padding: 10px;
+}
+
+.user_messages.leftside {
+  width: 50%
+}
+
+.user_messages.rightside {
+  width: 50%
 }

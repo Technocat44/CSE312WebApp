@@ -42,35 +42,40 @@
     <p>
       _______________________________________________________________________________________________________
     </p>
-    <div class="user_messages">
-      {{loop}} {{if no_image}}
-      <b>{{comment}}</b>
-      {{else}}
-      <img src="image/{{imageName}}" alt="" class="uploaded_images" />
-      {{end_if}}
-      <p>________________________________________________________</p>
-      {{end_loop}}
-    </div>
+    <div class="row">
+      <div class="user_messages leftside">
+        {{loop}} {{if no_image}}
+        <b>{{comment}}</b>
+        {{else}}
+        <img src="image/{{imageName}}" alt="" class="uploaded_images" />
+        {{end_if}}
+        <p>________________________________________________________</p>
+        {{end_loop}}
+      </div>
 
-    <p>
-      __________________________________________________________________________________________________
-    </p>
-    <label for="chat-comment">Chat: </label>
-    <input id="chat-comment" type="text" name="comment" />
+      <p>
+        __________________________________________________________________________________________________
+      </p>
+      <div class ="user_messages rightside">
+        <label for="chat-comment">Chat: </label>
+        <input id="chat-comment" type="text" name="comment" />
 
-    <button onclick="sendMessage()">Send</button>
+        <button onclick="sendMessage()">Send</button>
 
-    <div id="chat"></div>
+        <div id="chat"></div>
+        <br />
+        <button onclick="startVideo()">Start My Video</button>
+        <br />
+        <button onclick="connectWebRTC()">Start Video Chat</button>
+        <br />
 
-    <br />
-    <button onclick="startVideo()">Start My Video</button>
-    <br />
-    <button onclick="connectWebRTC()">Start Video Chat</button>
-    <br />
+        <video id="myVideo" autoplay muted></video>
+        <br />
+        <video id="otherVideo" autoplay></video>
+      </div>
 
-    <video id="myVideo" autoplay muted></video>
-    <br />
-    <video id="otherVideo" autoplay></video>
+      
+      </div>
     <script src="functions.js"></script>
   </body>
 </html>

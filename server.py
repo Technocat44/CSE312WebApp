@@ -107,7 +107,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     The request, client_address, and server are all TCP socket
     parameters/constructors, that we are passing to the specific super classes
     """
-  
+    counter = 0
+    websocket_connections = []
+
     # this is creating a bunch of routes and adding them to a route list. Mainly this is used to match
     # an incoming request to a specific path. 
     def __init__(self, request, client_address, server):
@@ -135,6 +137,8 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
          # need a placeholder value to enter the while loop, once inside loop, the actual content-length replaces
         print("[READING BYTES]")
         # while (len(read_bytes) < contentLen): # should be while I haven't read Content-Length bytes
+        MyTCPHandler.counter = MyTCPHandler.counter + 1
+        print("counter: " + str(MyTCPHandler.counter))
         received_data = self.request.recv(1024)
         
         clients.append(self.client_address[0])
