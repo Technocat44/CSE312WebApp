@@ -3,8 +3,8 @@ from server.request import Request
 import sys
 import hashlib
 import base64
-sys.path.append("..")
-from server import MyTCPHandler
+import random
+
 """
 --
 Try doing docker-compose up [-d if you use it] --build --force-recreate to tell Docker that it must build 
@@ -198,18 +198,28 @@ Video from 3/28 -- 13:00 minutes:
 
 """
 ###################################################################################
-MyTCPHandler.websocket_connections
+#MyTCPHandler.websocket_connections
 ###################################################################################
 
 # example key                       Sec-WebSocket-Key: 25dJisszYN+6UXLJCSqTEw==
 # example of proper response key:   sec-websocket-accept: vdlhb7ci/qt6pmGqd9J31pZtxss=
 def handshake(request, handler):
+    sys.path.append("..")
+    from app import MyTCPHandler
+    """
+    we import the MyTCPHandler only when this function is called to avoid cicular dependecy issues
+    """
     print("we have entered the websocket \n")
     res = generate_websocket_response(b"","text/plain; charset=utf-8",'101 Switching Protocols', request)
     print("this is response for websocket >>>>>>>>>>>>>>>>>>>>: ", res)
     handler.request.sendall(res)
-    # while True
+    username = "User" + str(random.randint(0,1000))
+    MyTCPHandler.websocket_connections.append({'username': username, 'websocket': handler})
+    while True:
     # write code to 
+        websock_frame = handler.request.recv(1024)
+        print("this is the websocket frame: ", websock_frame, flush=True)
+        
 
 
 
