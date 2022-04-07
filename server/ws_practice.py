@@ -143,13 +143,13 @@ def parseWebSocket(sockFrame):
 def mask(frame):
     ascii = "" # used to accumulate the message sent from the user
     opcodeMask = 15
-    byte1 = frame[0]
-    opcode = byte1 & opcodeMask
+    byteOne = frame[0]
+    opcode = byteOne & opcodeMask
     if opcode == 8:
         pass # break
-    byte2 = frame[1]
+    byteTwo = frame[1]
     payMask = 127
-    payLoadLength = byte2 & payMask
+    payLoadLength = byteTwo & payMask
     if payLoadLength < 126:
         mask = frame[2:6]
         smallMaskList = []
@@ -182,17 +182,48 @@ def mask(frame):
         print("message decoded: ",ascii)
     elif payLoadLength == 126:
         # have to combine the int values of the three bytes to know the length
-        byte2, byte3, byte4 = frame[2], frame[3], frame[4]
-        print(byte2, byte3, byte4)
-
-        # bytes 2,3,4 will make up the payload length
-        # bytes 5,6,7,8 will make up the mask
-        # bytes 9-end will make up the payload 
+        byte1 = payLoadLength
+        byte2, byte3 = frame[2], frame[3]
+        print("first byte of length: ",byte1)
+        print(formatInt2Bin(byte1))
+        print(byte2, byte3)
+        print(formatInt2Bin(byte2))
+        print(formatInt2Bin(byte3))
+        totalPayloadLength = byte1 + byte2 + byte3
+        print("totalPayload Length = ", totalPayloadLength)
+        medMask = frame[4:8]
+        medMaskList = []
+        for bytes in medMask:
+            medMaskList.append(formatInt2Bin(bytes))
+        print("medMask: ", medMask)
+        medPayLoad = frame[8:]
+        medPayLoadList = []
+        for bytes in medPayLoad:
+            medPayLoadList.append(formatInt2Bin(bytes))
+        print(len(medPayLoadList))
+        medPayDex = 0 # need to create this variable so it is not tied to the loop index
+        for payIndex in range(0,len(medPayLoadList),4): # skipping by 4 will match us with the next set of bytes for the mask!
+            # print("payIndex", payIndex)
+            # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes!!!!!
+            for mdIndex in range(len(medMaskList)): # smIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
+                if medPayDex == len(medPayLoadList): # is the payDex accumulator == len of payload we know to stop iterating
+                    break
+                # print("paydex: ",payDex)
+                # here we xor the bytes in the small mask that correspond to the payload list
+                xor = int(medMaskList[mdIndex],2) ^ int(medPayLoadList[medPayDex],2) 
+            # print("xor: ", bin(xor)[2:].zfill(len(smallMaskList[smIndex])))
+                medPayDex+=1 
+                ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
+                ascii += ascii_ch 
+        print("message decoded: ",ascii)
+        # bytes 1,2,3 will make up the payload length
+        # bytes 4,5,6,7 will make up the mask
+        # bytes 8-end will make up the payload 
     elif payLoadLength > 126:
         pass
-        # bytes 2,3,4,5,6,7,8,9,10 will make up the payload length
-        # bytes 11,12,13,14 will make up the mask
-        # bytes 15 - end make up the payload
+        # bytes 1,2,3,4,5,6,7,8,9will make up the payload length
+        # bytes 10,11,12,13 will make up the mask
+        # bytes 14 - end make up the payload
                
 
 
@@ -201,11 +232,14 @@ def escape_html(hacker):
 
 
 if __name__ == '__main__':
-    websockFrame = b'\x81\xba\xe0\x9e\x8f\x12\x9b\xbc\xe2w\x93\xed\xeeu\x85\xca\xf6b\x85\xbc\xb50\x83\xf6\xeef\xad\xfb\xfca\x81\xf9\xea0\xcc\xbc\xec}\x8d\xf3\xea|\x94\xbc\xb50\xad\xe7\xaft\x89\xec\xfcf\xc0\xf3\xeaa\x93\xff\xe8w\xc2\xe3'
+    websocketFrame = b'\x81\xba\xe0\x9e\x8f\x12\x9b\xbc\xe2w\x93\xed\xeeu\x85\xca\xf6b\x85\xbc\xb50\x83\xf6\xeef\xad\xfb\xfca\x81\xf9\xea0\xcc\xbc\xec}\x8d\xf3\xea|\x94\xbc\xb50\xad\xe7\xaft\x89\xec\xfcf\xc0\xf3\xeaa\x93\xff\xe8w\xc2\xe3'
+    websocketFrame85 = b'\x81\xfe\x00\x7fy\xa3\xba\xbe\x02\x81\xd7\xdb\n\xd0\xdb\xd9\x1c\xf7\xc3\xce\x1c\x81\x80\x9c\x1a\xcb\xdb\xca4\xc6\xc9\xcd\x18\xc4\xdf\x9cU\x81\xd9\xd1\x14\xce\xdf\xd0\r\x81\x80\x9c\x11\xca\x96\x9e\x1c\xd5\xdf\xcc\x00\xcc\xd4\xdbY\xd7\xd2\xd7\n\x83\xd3\xcdY\xc2\x9a\xd3\x1c\xd0\xc9\xdf\x1e\xc6\x9a\xca\x11\xc2\xce\x9e\x10\xd0\x9a\xdb\x10\xc4\xd2\xca\x00\x8e\xdc\xd7\x0f\xc6\x9a\xdd\x11\xc2\xc8\xdf\x1a\xd7\xdf\xcc\n\x83\xd6\xd1\x17\xc4\x9a\xdf\x17\xc7\x9a\xd6\x16\xd4\x9a\xdf\x1b\xcc\xcf\xcaY\xd7\xd2\xdf\r\x81\xc7'
     
-    parseWebSocket(websockFrame)
-    #mask(websockFrame)
+    #parseWebSocket(websocketFrame85)
+    websocketFrameHuge = b'\x81\xfe\x02\xa5\xf5\xcb\xb8\xa9\x8e\xe9\xd5\xcc\x86\xb8\xd9\xce\x90\x9f\xc1\xd9\x90\xe9\x82\x8b\x96\xa3\xd9\xdd\xb8\xae\xcb\xda\x94\xac\xdd\x8b\xd9\xe9\xdb\xc6\x98\xa6\xdd\xc7\x81\xe9\x82\x8b\xb1\xb9\xd9\xca\x80\xa7\xd9\x93\xd5\x94\x8b\x89\xb8\xaa\xc1\x87\xd5\x89\xd1\xda\x81\xb9\xd1\xdd\x8f\xe5\xe7\x84\xd8\x87\xdd\xcf\x81\xeb\xf5\xdc\x9b\xa2\xdb\xc1\xd5\xaa\xcc\x89\xcd\xf1\x8b\x9c\xd5\x9b\x96\x89\xb8\xe5\x94\x89\x9a\xa5\x98\x98\x86\xbf\x98\xe4\x94\xb2\x94\x89\x94\xb9\xca\xc0\x83\xa2\xd6\xce\xd5\xaa\xcc\x89\xa3\xa2\xdd\xc7\x9b\xaa\x98\xcc\x94\xb9\xd4\xd0\xd5\xa5\xdd\xd1\x81\xeb\xd5\xc6\x87\xa5\xd1\xc7\x92\xf0\x98\xda\x9d\xa4\xcd\xc5\x91\xeb\xd0\xc8\x83\xae\x98\xc8\x87\xb9\xd1\xdf\x90\xaf\x98\xc8\x81\xeb\x8e\x93\xc1\xfd\x94\x89\x97\xbe\xcc\x89\x81\xb9\xd9\xc0\x9b\xeb\xcf\xc8\x86\xeb\xd9\xc7\xd5\xa3\xd7\xdc\x87\xeb\xd4\xc8\x81\xae\x96\x89\xb7\xbe\xdc\xc8\xd8\x9b\xdd\xda\x81\xa3\x98\xda\x90\xae\xd5\xda\xd5\xaa\x98\xde\x9a\xa5\xdc\xcc\x87\xad\xcd\xc5\xd5\xbb\xd4\xc8\x96\xae\x94\x89\x93\xb9\xd7\xc4\xd5\xbf\xd0\xcc\xd5\xac\xd4\xc0\x98\xbb\xcb\xcc\xd5\xbc\xd0\xc0\x96\xa3\x98\xe0\xd5\xac\xd7\xdd\xd5\xa4\xde\x89\x9c\xbf\x98\xcf\x87\xa4\xd5\x89\x81\xa3\xdd\x89\x81\xb9\xd9\xc0\x9b\xeb\xd9\xc7\x91\xeb\xcc\xc1\x90\xeb\xd4\xc0\x81\xbf\xd4\xcc\xd5\x82\x98\xca\x9a\xbe\xd4\xcd\xd5\xbc\xd9\xc5\x9e\xeb\xcc\xc1\x87\xa4\xcd\xce\x9d\xeb\xcc\xc1\x90\xeb\xcb\xdd\x87\xae\xdd\xdd\x86\xe5\x98\xe0\xd5\xad\xdd\xc8\x87\xae\xdc\x89\x81\xa4\x98\xce\x9a\xeb\xce\xcc\x87\xb2\x98\xcf\x94\xb9\x98\xcf\x87\xa4\xd5\x89\x81\xa3\xdd\x89\x86\xbf\xd9\xdd\x9c\xa4\xd6\x85\xd5\xaa\xcb\x89\x82\xae\x98\xc1\x94\xaf\x98\xc8\x87\xb9\xd1\xdf\x90\xaf\x98\xc5\x94\xbf\xdd\x89\x94\xa5\xdc\x89\x82\xa4\xcd\xc5\x91\xeb\xcb\xdd\x94\xb9\xcc\x89\x94\xb8\x98\xc7\x90\xaa\xca\x89\x81\xa3\xdd\x89\x96\xa4\xca\xdb\x90\xa8\xcc\x89\x81\xa2\xd5\xcc\xd5\xaa\xcb\x89\x85\xa4\xcb\xda\x9c\xa9\xd4\xcc\xdb\xeb\xec\xc1\x90\xeb\xd1\xc4\x85\xb9\xdd\xda\x86\xa2\xd7\xc7\xd5\x82\x98\xc1\x94\xaf\x98\xde\x94\xb8\x98\xdd\x9d\xaa\xcc\x89\x82\xae\x98\xde\x90\xb9\xdd\x89\x99\xae\xd9\xdf\x9c\xa5\xdf\x89\x81\xa3\xdd\x89\xa2\xae\xcb\xdd\xd5\xaa\xd6\xcd\xd5\xae\xd6\xdd\x90\xb9\xd1\xc7\x92\xeb\xcc\xc1\x90\xeb\xfd\xc8\x86\xbf\x83\x89\x81\xa3\xdd\x89\x98\xa4\xcb\xdd\xd5\xbc\xdd\xda\x81\xae\xca\xc7\xd5\xa4\xde\x89\x86\xbb\xd4\xcc\x9b\xaf\xd1\xcd\xd5\xa9\xca\xc0\x91\xac\xdd\xda\xd5\xa4\xce\xcc\x87\xeb\xcc\xc1\x90\xeb\xfc\xc8\x9b\xbe\xda\xcc\xd9\xeb\xcf\xc1\x9c\xa8\xd0\x89\x9c\xb8\x98\xc1\x90\xb9\xdd\x89\x9a\xad\x98\xc7\x9a\xa9\xd4\xcc\xd5\xbc\xd1\xcd\x81\xa3\x98\xc8\x9b\xaf\x98\xcd\x90\xbb\xcc\xc1\xd9\xeb\xcc\xc6\x9a\xa0\x98\xdc\x86\xeb\xd9\xc4\x9a\xa5\xdf\x89\x81\xa3\xdd\x89\x81\xb9\xd9\xcd\x9c\xbf\xd1\xc6\x9b\xb8\x98\xc6\x93\xeb\xec\xdc\x87\xa0\xd1\xda\x9d\xeb\xca\xdc\x99\xae\x96\x8b\x88'
+    mask(websocketFrame85)
    # print(type(websockFrame))
+   # print("the lenght of the message: ", len('{"messageType":"chatMessage","comment":"My first message"}'))
     pass
 
 """
@@ -289,19 +323,19 @@ Parsing bits:
                 • The next {{16 bits}} represents the payload length [bits 16-31 in the frame] 
                 *** So we need to read the next two bytes and combine them into a single int to know how long
                     the payload length is
-                [[[             1               2               3               4
+                [[[             0               1               2             3
                          0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                         +-+-+-+-+-------+-+-------------+-------------------------------+
                         |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
                         |I|S|S|S|  (4)  |A|     (7)     |             (16bits)          |
                         |N|V|V|V|       |S|             |       (The next 4 bytes)      |
                         | |1|2|3|       |K|             |      (if payload len==126)    |
-                                5               6               7               8   
+                                4               5                6             7   
                         +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
                         |                            (4 bytes)                          |
                         |                   Masking key starts here                     |
                         + - - - - - - - - - - - - - - - + - - - - - - - - - - - - - - - +
-                                9               10              11              12
+                                8               9              10              11
                         |                        Payload Data                           |
                         +-------------------------------+-------------------------------+
                         :                     Payload Data continued ...                :
@@ -319,7 +353,7 @@ Parsing bits:
                 • 16 exabytes / 16,000,000 terabytes 
                 *** the next 8 bytes will be the payload length then [bits 16-79 in the frame]
             
-                [[[             1               2               3               4
+                [[[             0               1                2             3
                         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                         +-+-+-+-+-------+-+-------------+-------------------------------+
                         |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
@@ -327,13 +361,13 @@ Parsing bits:
                         |N|V|V|V|       |S|             |          (8 bytes)            |
                         | |1|2|3|       |K|             |    (if payload len==127)      |
                         +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-                                5               6               7               8       
+                                4               5               6              7       
                         |     Extended payload length continued, if payload len == 127  |
-                                9              10               11              12
+                                8               9               10             11
                         + - - - - - - - - - - - - - - - +-------------------------------+
                         |  Extended payload length      | Masking-key, (4 bytes)        |
                         +-------------------------------+-------------------------------+
-                                13              14
+                                12             13              14               15
                         | Masking-key (continued)       |          Payload Data         |
                         +-------------------------------- - - - - - - - - - - - - - - - +
                         :                     Payload Data continued ...                :
