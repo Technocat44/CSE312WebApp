@@ -141,7 +141,6 @@ def parseWebSocket(sockFrame):
     return 0
 
 def mask(frame):
-    ascii = "" # used to accumulate the message sent from the user
     opcodeMask = 15
     byteOne = frame[0]
     opcode = byteOne & opcodeMask
@@ -154,32 +153,16 @@ def mask(frame):
         mask = frame[2:6]
         smallMaskList = []
         print(mask, type(mask))
-        for bytes in mask:
+        for bytes in mask: # this will create a string list of bytes
             smallMaskList.append(formatInt2Bin(bytes))
-        # for bytes in range(len(frame)):
-        #     for b in range(len(mask)):
         print(smallMaskList)
-        #         decode = frame[b] ^ mask[b]
         payLoad = frame[6:]
-        payloadList = []
-        for bytes in payLoad:
-            payloadList.append(formatInt2Bin(bytes))
-        print(len(payloadList))
-        payDex = 0 # need to create this variable so it is not tied to the loop index
-        for payIndex in range(0,len(payloadList),4): # skipping by 4 will match us with the next set of bytes for the mask!
-            # print("payIndex", payIndex)
-            # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes!!!!!
-            for smIndex in range(len(smallMaskList)): # smIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
-                if payDex == len(payloadList): # is the payDex accumulator == len of payload we know to stop iterating
-                    break
-                # print("paydex: ",payDex)
-                # here we xor the bytes in the small mask that correspond to the payload list
-                xor = int(smallMaskList[smIndex],2) ^ int(payloadList[payDex],2) 
-            # print("xor: ", bin(xor)[2:].zfill(len(smallMaskList[smIndex])))
-                payDex+=1 
-                ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
-                ascii += ascii_ch 
-        print("message decoded: ",ascii)
+        smallpayloadList = []
+        for bytes in payLoad: # this will create a string list of bytes
+            smallpayloadList.append(formatInt2Bin(bytes))
+        print(len(smallpayloadList))
+        decodeMes = decodeMessage(smallpayloadList, smallMaskList)
+        print("message decoded of <125 plength: ",decodeMes)
     elif payLoadLength == 126:
         # have to combine the int values of the three bytes to know the length
         byte1 = payLoadLength
@@ -189,6 +172,7 @@ def mask(frame):
         print(byte2, byte3)
         print(formatInt2Bin(byte2))
         print(formatInt2Bin(byte3))
+        # I will need to use the total payload length later when sending the frames
         totalPayloadLength = byte1 + byte2 + byte3
         print("totalPayload Length = ", totalPayloadLength)
         medMask = frame[4:8]
@@ -201,21 +185,8 @@ def mask(frame):
         for bytes in medPayLoad:
             medPayLoadList.append(formatInt2Bin(bytes))
         print(len(medPayLoadList))
-        medPayDex = 0 # need to create this variable so it is not tied to the loop index
-        for payIndex in range(0,len(medPayLoadList),4): # skipping by 4 will match us with the next set of bytes for the mask!
-            # print("payIndex", payIndex)
-            # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes!!!!!
-            for mdIndex in range(len(medMaskList)): # smIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
-                if medPayDex == len(medPayLoadList): # is the payDex accumulator == len of payload we know to stop iterating
-                    break
-                # print("paydex: ",payDex)
-                # here we xor the bytes in the small mask that correspond to the payload list
-                xor = int(medMaskList[mdIndex],2) ^ int(medPayLoadList[medPayDex],2) 
-            # print("xor: ", bin(xor)[2:].zfill(len(smallMaskList[smIndex])))
-                medPayDex+=1 
-                ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
-                ascii += ascii_ch 
-        print("message decoded: ",ascii)
+        decodedMessage = decodeMessage(medPayLoadList, medMaskList)
+        print("message decoded from 126 plength: ",decodedMessage)
         # bytes 1,2,3 will make up the payload length
         # bytes 4,5,6,7 will make up the mask
         # bytes 8-end will make up the payload 
@@ -226,6 +197,20 @@ def mask(frame):
         # bytes 14 - end make up the payload
                
 
+def decodeMessage(payloadByteList: list, maskbyteList: list):
+    asciiStr = ""
+    payIndex = 0 # need to create this variable so it is not tied to the loop index
+    for pIndex in range(0,len(payloadByteList), 4): # skipping by 4 will match us with the next set of bytes for the mask!
+        # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes
+        for mIndex in range(len(maskbyteList)): # mIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
+            if payIndex == len(payloadByteList):
+                break  # is the payDex accumulator == len of payload we know to stop iterating
+            # here we xor the bytes in the small mask that correspond to the payload list
+            xor = int(maskbyteList[mIndex],2)^int(payloadByteList[payIndex],2)
+            payIndex+=1 
+            ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
+            asciiStr += ascii_ch 
+    return asciiStr
 
 def escape_html(hacker):
     return hacker.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
@@ -237,7 +222,9 @@ if __name__ == '__main__':
     
     #parseWebSocket(websocketFrame85)
     websocketFrameHuge = b'\x81\xfe\x02\xa5\xf5\xcb\xb8\xa9\x8e\xe9\xd5\xcc\x86\xb8\xd9\xce\x90\x9f\xc1\xd9\x90\xe9\x82\x8b\x96\xa3\xd9\xdd\xb8\xae\xcb\xda\x94\xac\xdd\x8b\xd9\xe9\xdb\xc6\x98\xa6\xdd\xc7\x81\xe9\x82\x8b\xb1\xb9\xd9\xca\x80\xa7\xd9\x93\xd5\x94\x8b\x89\xb8\xaa\xc1\x87\xd5\x89\xd1\xda\x81\xb9\xd1\xdd\x8f\xe5\xe7\x84\xd8\x87\xdd\xcf\x81\xeb\xf5\xdc\x9b\xa2\xdb\xc1\xd5\xaa\xcc\x89\xcd\xf1\x8b\x9c\xd5\x9b\x96\x89\xb8\xe5\x94\x89\x9a\xa5\x98\x98\x86\xbf\x98\xe4\x94\xb2\x94\x89\x94\xb9\xca\xc0\x83\xa2\xd6\xce\xd5\xaa\xcc\x89\xa3\xa2\xdd\xc7\x9b\xaa\x98\xcc\x94\xb9\xd4\xd0\xd5\xa5\xdd\xd1\x81\xeb\xd5\xc6\x87\xa5\xd1\xc7\x92\xf0\x98\xda\x9d\xa4\xcd\xc5\x91\xeb\xd0\xc8\x83\xae\x98\xc8\x87\xb9\xd1\xdf\x90\xaf\x98\xc8\x81\xeb\x8e\x93\xc1\xfd\x94\x89\x97\xbe\xcc\x89\x81\xb9\xd9\xc0\x9b\xeb\xcf\xc8\x86\xeb\xd9\xc7\xd5\xa3\xd7\xdc\x87\xeb\xd4\xc8\x81\xae\x96\x89\xb7\xbe\xdc\xc8\xd8\x9b\xdd\xda\x81\xa3\x98\xda\x90\xae\xd5\xda\xd5\xaa\x98\xde\x9a\xa5\xdc\xcc\x87\xad\xcd\xc5\xd5\xbb\xd4\xc8\x96\xae\x94\x89\x93\xb9\xd7\xc4\xd5\xbf\xd0\xcc\xd5\xac\xd4\xc0\x98\xbb\xcb\xcc\xd5\xbc\xd0\xc0\x96\xa3\x98\xe0\xd5\xac\xd7\xdd\xd5\xa4\xde\x89\x9c\xbf\x98\xcf\x87\xa4\xd5\x89\x81\xa3\xdd\x89\x81\xb9\xd9\xc0\x9b\xeb\xd9\xc7\x91\xeb\xcc\xc1\x90\xeb\xd4\xc0\x81\xbf\xd4\xcc\xd5\x82\x98\xca\x9a\xbe\xd4\xcd\xd5\xbc\xd9\xc5\x9e\xeb\xcc\xc1\x87\xa4\xcd\xce\x9d\xeb\xcc\xc1\x90\xeb\xcb\xdd\x87\xae\xdd\xdd\x86\xe5\x98\xe0\xd5\xad\xdd\xc8\x87\xae\xdc\x89\x81\xa4\x98\xce\x9a\xeb\xce\xcc\x87\xb2\x98\xcf\x94\xb9\x98\xcf\x87\xa4\xd5\x89\x81\xa3\xdd\x89\x86\xbf\xd9\xdd\x9c\xa4\xd6\x85\xd5\xaa\xcb\x89\x82\xae\x98\xc1\x94\xaf\x98\xc8\x87\xb9\xd1\xdf\x90\xaf\x98\xc5\x94\xbf\xdd\x89\x94\xa5\xdc\x89\x82\xa4\xcd\xc5\x91\xeb\xcb\xdd\x94\xb9\xcc\x89\x94\xb8\x98\xc7\x90\xaa\xca\x89\x81\xa3\xdd\x89\x96\xa4\xca\xdb\x90\xa8\xcc\x89\x81\xa2\xd5\xcc\xd5\xaa\xcb\x89\x85\xa4\xcb\xda\x9c\xa9\xd4\xcc\xdb\xeb\xec\xc1\x90\xeb\xd1\xc4\x85\xb9\xdd\xda\x86\xa2\xd7\xc7\xd5\x82\x98\xc1\x94\xaf\x98\xde\x94\xb8\x98\xdd\x9d\xaa\xcc\x89\x82\xae\x98\xde\x90\xb9\xdd\x89\x99\xae\xd9\xdf\x9c\xa5\xdf\x89\x81\xa3\xdd\x89\xa2\xae\xcb\xdd\xd5\xaa\xd6\xcd\xd5\xae\xd6\xdd\x90\xb9\xd1\xc7\x92\xeb\xcc\xc1\x90\xeb\xfd\xc8\x86\xbf\x83\x89\x81\xa3\xdd\x89\x98\xa4\xcb\xdd\xd5\xbc\xdd\xda\x81\xae\xca\xc7\xd5\xa4\xde\x89\x86\xbb\xd4\xcc\x9b\xaf\xd1\xcd\xd5\xa9\xca\xc0\x91\xac\xdd\xda\xd5\xa4\xce\xcc\x87\xeb\xcc\xc1\x90\xeb\xfc\xc8\x9b\xbe\xda\xcc\xd9\xeb\xcf\xc1\x9c\xa8\xd0\x89\x9c\xb8\x98\xc1\x90\xb9\xdd\x89\x9a\xad\x98\xc7\x9a\xa9\xd4\xcc\xd5\xbc\xd1\xcd\x81\xa3\x98\xc8\x9b\xaf\x98\xcd\x90\xbb\xcc\xc1\xd9\xeb\xcc\xc6\x9a\xa0\x98\xdc\x86\xeb\xd9\xc4\x9a\xa5\xdf\x89\x81\xa3\xdd\x89\x81\xb9\xd9\xcd\x9c\xbf\xd1\xc6\x9b\xb8\x98\xc6\x93\xeb\xec\xdc\x87\xa0\xd1\xda\x9d\xeb\xca\xdc\x99\xae\x96\x8b\x88'
+    mask(websocketFrame)
     mask(websocketFrame85)
+    
    # print(type(websockFrame))
    # print("the lenght of the message: ", len('{"messageType":"chatMessage","comment":"My first message"}'))
     pass
