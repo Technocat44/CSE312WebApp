@@ -1,7 +1,6 @@
 # https://stackoverflow.com/questions/10411085/converting-integer-to-binary-in-python
 
-from encodings import utf_8
-
+import json
 
 def formatInt2Bin(integer):
     formatted = '{0:08b}'.format(integer)
@@ -31,7 +30,7 @@ def parseWebSocket(sockFrame):
     # make a loop over the socket frame, accumulate four formatted nibbles into a string, and then print the string
     # reset the string and continue the loop 
     payloadmask = 127
-    payload = 127
+    payload = 255
     print(formatInt2Bin(payloadmask))
     print(formatInt2Bin(payload))
     plength = payload & payloadmask
@@ -60,17 +59,18 @@ def parseWebSocket(sockFrame):
 
 
 
-    movePastStartingBytes = 2
+    movePastStartingBytes = 2 # set this to 2 so we start parsing at the mask, 
     smallMask = ""
     the_payload = ""
     for bytes in sockFrame:
         # print("len of sockFrame:",len(sockFrame))
         # print(movePastStartingBytes)
-        if movePastStartingBytes == len(sockFrame):
+        if movePastStartingBytes == len(sockFrame): # we know we've reached the end when the length == the # of bytes chunks
             break
-        elif movePastStartingBytes < 6:
-            smallMask += formatInt2Bin(sockFrame[movePastStartingBytes]) + " "
-            movePastStartingBytes+=1
+        elif movePastStartingBytes < 6: # we know that bytes 2,3,4,5 are the mask so only iterate over them
+            smallMask += formatInt2Bin(sockFrame[movePastStartingBytes]) + " "  
+            # setting up the mask and the payload to have a space so I can split on that and have a list of bytes to work
+            movePastStartingBytes+=1 # move on to the next set of bytes
         else:
             # rest of bytes are the payload
             the_payload += formatInt2Bin(sockFrame[movePastStartingBytes]) + " "
@@ -82,8 +82,12 @@ def parseWebSocket(sockFrame):
 
     test=                "1000001010000010"
     bi = int(test,2)^int("0111110110101010",2)
+    # XOR the two bytes in binary
     b = bin(bi)[2:].zfill(len(test))
     # how to convert a string representation of a binary number into an int
+    # bin(bi) converts the integer bi into intos binary representation
+    # the [2:] skips over the first two bits that are the 0b
+    # zfill will pad the left of the binary with zeros and do so the length of the inital binary
     print(bi)
     print(b)
     # print(8 % 32)
@@ -108,25 +112,36 @@ def parseWebSocket(sockFrame):
     print(smallMaskList)
     payloadList = the_payload.split()
     print(len(payloadList))
-    ascii = ""
-    payDex = 0
-    for payIndex in range(0,len(payloadList),4):
-        print("payIndex", payIndex)
-        
-        for smIndex in range(len(smallMaskList)):
-            if payDex == len(payloadList):
+    ascii = "" # this will be the message
+    payDex = 0 # need to create this variable so it is not tied to the loop index
+    for payIndex in range(0,len(payloadList),4): # skipping by 4 will match us with the next set of bytes for the mask!
+        # print("payIndex", payIndex)
+        # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes!!!!!
+        for smIndex in range(len(smallMaskList)): # smIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
+            if payDex == len(payloadList): # is the payDex accumulator == len of payload we know to stop iterating
                 break
-            print("paydex: ",payDex)
-            xor = int(smallMaskList[smIndex],2) ^ int(payloadList[payDex],2)
+            # print("paydex: ",payDex)
+            # here we xor the bytes in the small mask that correspond to the payload list
+            xor = int(smallMaskList[smIndex],2) ^ int(payloadList[payDex],2) 
            # print("xor: ", bin(xor)[2:].zfill(len(smallMaskList[smIndex])))
-            payDex+=1
-            ascii_ch = chr(xor)
-            ascii += ascii_ch
-    print(ascii)
+            payDex+=1 
+            ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
+            ascii += ascii_ch 
+    print("message decoded: ",ascii)
+    dict =json.loads(ascii) 
+    print(type(dict)) 
+    if dict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
+        comment = dict["comment"]
+        print("this is the comment: ", comment)
+        # need to escape the html of the comment
+        escapedComment = escape_html(comment)
+        print("this is the escaped comment: ", escapedComment)
+
         
     return 0
 
 def mask(frame):
+    ascii = "" # used to accumulate the message sent from the user
     opcodeMask = 15
     byte1 = frame[0]
     opcode = byte1 & opcodeMask
@@ -137,37 +152,59 @@ def mask(frame):
     payLoadLength = byte2 & payMask
     if payLoadLength < 126:
         mask = frame[2:6]
-        #print(mask, type(mask))
-        for bytes in range(len(frame)):
-            for b in range(len(mask)):
-              
-                decode = frame[b] ^ mask[b]
-              
+        smallMaskList = []
+        print(mask, type(mask))
+        for bytes in mask:
+            smallMaskList.append(formatInt2Bin(bytes))
+        # for bytes in range(len(frame)):
+        #     for b in range(len(mask)):
+        print(smallMaskList)
+        #         decode = frame[b] ^ mask[b]
+        payLoad = frame[6:]
+        payloadList = []
+        for bytes in payLoad:
+            payloadList.append(formatInt2Bin(bytes))
+        print(len(payloadList))
+        payDex = 0 # need to create this variable so it is not tied to the loop index
+        for payIndex in range(0,len(payloadList),4): # skipping by 4 will match us with the next set of bytes for the mask!
+            # print("payIndex", payIndex)
+            # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes!!!!!
+            for smIndex in range(len(smallMaskList)): # smIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
+                if payDex == len(payloadList): # is the payDex accumulator == len of payload we know to stop iterating
+                    break
+                # print("paydex: ",payDex)
+                # here we xor the bytes in the small mask that correspond to the payload list
+                xor = int(smallMaskList[smIndex],2) ^ int(payloadList[payDex],2) 
+            # print("xor: ", bin(xor)[2:].zfill(len(smallMaskList[smIndex])))
+                payDex+=1 
+                ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
+                ascii += ascii_ch 
+        print("message decoded: ",ascii)
+    elif payLoadLength == 126:
+        # have to combine the int values of the three bytes to know the length
+        byte2, byte3, byte4 = frame[2], frame[3], frame[4]
+        print(byte2, byte3, byte4)
+
+        # bytes 2,3,4 will make up the payload length
+        # bytes 5,6,7,8 will make up the mask
+        # bytes 9-end will make up the payload 
+    elif payLoadLength > 126:
+        pass
+        # bytes 2,3,4,5,6,7,8,9,10 will make up the payload length
+        # bytes 11,12,13,14 will make up the mask
+        # bytes 15 - end make up the payload
                
 
-def parseFrame(frame):
-    opMask = 15
-    firstbyte = frame[0]
-    opCode = firstbyte & opMask
-    if opCode == 8:
-        pass # break (will be break in the while True loop)
-    payload_mask = 127
-    payload_length = frame[1] & payload_mask
-    if payload_length < 126:
-        pass
-        # only need to read the next 4 bytes are the mask 
 
-    elif payload_length == 126:
-        pass
-    else:
-        pass
-
+def escape_html(hacker):
+    return hacker.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
 if __name__ == '__main__':
     websockFrame = b'\x81\xba\xe0\x9e\x8f\x12\x9b\xbc\xe2w\x93\xed\xeeu\x85\xca\xf6b\x85\xbc\xb50\x83\xf6\xeef\xad\xfb\xfca\x81\xf9\xea0\xcc\xbc\xec}\x8d\xf3\xea|\x94\xbc\xb50\xad\xe7\xaft\x89\xec\xfcf\xc0\xf3\xeaa\x93\xff\xe8w\xc2\xe3'
+    
     parseWebSocket(websockFrame)
-    mask(websockFrame)
+    #mask(websockFrame)
    # print(type(websockFrame))
     pass
 
@@ -252,18 +289,20 @@ Parsing bits:
                 • The next {{16 bits}} represents the payload length [bits 16-31 in the frame] 
                 *** So we need to read the next two bytes and combine them into a single int to know how long
                     the payload length is
-                [[[
+                [[[             1               2               3               4
                          0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                         +-+-+-+-+-------+-+-------------+-------------------------------+
                         |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
-                        |I|S|S|S|  (4)  |A|     (7)     |             (32bits)          |
+                        |I|S|S|S|  (4)  |A|     (7)     |             (16bits)          |
                         |N|V|V|V|       |S|             |       (The next 4 bytes)      |
                         | |1|2|3|       |K|             |      (if payload len==126)    |
+                                5               6               7               8   
                         +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
-                        |                               |          (4 bytes)            |
-                        |   Extended payload length     |   Masking key starts here     |
+                        |                            (4 bytes)                          |
+                        |                   Masking key starts here                     |
                         + - - - - - - - - - - - - - - - + - - - - - - - - - - - - - - - +
-                        | Masking-key (continued)       |          Payload Data         |
+                                9               10              11              12
+                        |                        Payload Data                           |
                         +-------------------------------+-------------------------------+
                         :                     Payload Data continued ...                :
                         + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +
@@ -280,7 +319,7 @@ Parsing bits:
                 • 16 exabytes / 16,000,000 terabytes 
                 *** the next 8 bytes will be the payload length then [bits 16-79 in the frame]
             
-                [[[
+                [[[             1               2               3               4
                         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                         +-+-+-+-+-------+-+-------------+-------------------------------+
                         |F|R|R|R| opcode|M| Payload len |    Extended payload length    |
@@ -288,10 +327,13 @@ Parsing bits:
                         |N|V|V|V|       |S|             |          (8 bytes)            |
                         | |1|2|3|       |K|             |    (if payload len==127)      |
                         +-+-+-+-+-------+-+-------------+ - - - - - - - - - - - - - - - +
+                                5               6               7               8       
                         |     Extended payload length continued, if payload len == 127  |
+                                9              10               11              12
                         + - - - - - - - - - - - - - - - +-------------------------------+
                         |  Extended payload length      | Masking-key, (4 bytes)        |
                         +-------------------------------+-------------------------------+
+                                13              14
                         | Masking-key (continued)       |          Payload Data         |
                         +-------------------------------- - - - - - - - - - - - - - - - +
                         :                     Payload Data continued ...                :
@@ -314,6 +356,7 @@ Parsing bits:
         • Ie. Always reading 4 bytes will cause an index out of bounds error
         [[reccommeded to mask 1 byte at a time:
           Use modular arithmetic to match the correct part of the payload with the mask]]
+
     Final Message:
         • Once the payload is XORed with the mask 4 bytes at time we get the entire message
         • Then process the message
