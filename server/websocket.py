@@ -4,7 +4,9 @@ import sys
 import hashlib
 import base64
 import random
-
+import os
+import json
+import sys
 """
 --
 Try doing docker-compose up [-d if you use it] --build --force-recreate to tell Docker that it must build 
@@ -215,13 +217,16 @@ def handshake(request, handler):
     handler.request.sendall(res)
     username = "User" + str(random.randint(0,1000))
     MyTCPHandler.websocket_connections.append({'username': username, 'websocket': handler})
+    websocketString = b''
+
+
     while True:
     # write code to 
+        if len(websocketString) > 65500:
+            break
         websock_frame = handler.request.recv(1024)
-        print("this is the websocket frame: ", websock_frame, flush=True)
-        
-
-
+        websocketString += websock_frame
+    print("websocket frame = : ", websocketString, flush=True)
 
 def generate_websocket_response(body, content_type, response_code, request):
     r = b'HTTP/1.1 ' + response_code.encode()
