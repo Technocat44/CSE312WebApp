@@ -222,11 +222,22 @@ def handshake(request, handler):
 
     while True:
     # write code to 
-        if len(websocketString) > 65500:
-            break
         websock_frame = handler.request.recv(1024)
+
+        if len(websocketString) > 67073:
+            break
         websocketString += websock_frame
-    print("websocket frame = : ", websocketString, flush=True)
+        opcodeMask = 15
+        byteOne = websock_frame[0]
+        opcode = byteOne & opcodeMask
+        if opcode == 8:
+            break
+        byteTwo = websock_frame[1]
+        payMask = 127
+        decodeMe = ""
+        initial_payLoadLength_via_byte2 = byteTwo & payMask
+      #  print("this is the length of the websocketString: ",len(websocketString), flush = True)
+    # print("websocket frame = : ", websocketString, flush=True)
 
 def generate_websocket_response(body, content_type, response_code, request):
     r = b'HTTP/1.1 ' + response_code.encode()
@@ -239,6 +250,7 @@ def generate_websocket_response(body, content_type, response_code, request):
     r += b'\r\n\r\n'
     return r
 
+# This function generates the sha1 hash, base64 encodes it and establishes the websocket handshake
 def generate_sha(request):
     request_key = request.headers["Sec-WebSocket-Key"]
     full_hash_key = request_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"  
@@ -247,4 +259,86 @@ def generate_sha(request):
     rethash = b"\r\nSec-WebSocket-Accept: " + hashy.encode()
     return rethash
 
-  
+# this function takes in an integer and returns the binary values as a string
+def formatInt2Bin(integer: bytes):
+    formatted = '{0:08b}'.format(integer)
+    return formatted
+
+
+def mask(frame: bytes):
+    opcodeMask = 15
+    byteOne = frame[0]
+    opcode = byteOne & opcodeMask
+    if opcode == 8:
+        pass # break
+    byteTwo = frame[1]
+    payMask = 127
+    decodeMe = ""
+    payLoadLength = byteTwo & payMask
+    if payLoadLength < 126:
+        pass
+    elif payLoadLength == 126:
+        pass
+    elif payLoadLength > 126:
+        pass
+
+# this function take in the bytes of the payload and the bytes of the mask and XOR's the payload with the mask, decoding
+# the message and returns the message as a string
+def decodeMessage(payloadByteList: list, maskbyteList: list):
+    asciiStr = ""
+    payIndex = 0 # need to create this variable so it is not tied to the loop index
+    for pIndex in range(0,len(payloadByteList), 4): # skipping by 4 will match us with the next set of bytes for the mask!
+        # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes
+        for mIndex in range(len(maskbyteList)): # mIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
+            if payIndex == len(payloadByteList):
+                break  # is the payDex accumulator == len of payload we know to stop iterating
+            # here we xor the bytes in the small mask that correspond to the payload list
+            xor = int(maskbyteList[mIndex],2)^int(payloadByteList[payIndex],2)
+            payIndex+=1 
+            ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
+            asciiStr += ascii_ch 
+    return asciiStr
+
+# this function takes in a string and escapes any html injections
+def escape_html(hacker: str):
+    return hacker.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+# this function takes in a websocket frame, and based on the payload length parses the bytes of the frame into a list
+def createMaskList(frame: bytes, startingMaskIndex: int, endingMaskIndex: int):
+    maskList = []
+    mask = frame[startingMaskIndex:endingMaskIndex]
+    for bytes in mask:
+        maskList.append(formatInt2Bin(bytes))
+    return maskList
+
+# this function takes in a websocket frame, and based on the payload length parses the bytes of the frame into a list
+def createPayLoad(frame: bytes, startingPayLoadIndex: int):
+    payLoadList = []
+    payload = frame[startingPayLoadIndex:]
+    for bytes in payload:
+        payLoadList.append(formatInt2Bin(bytes))
+    return payLoadList
+
+# this function takes in a frame and determines the integer value of the payload length from the websocket frame
+def calculatePayloadLength(frame: bytes, startingPayLoadLengthIndex: int, endingPayLoadLengthIndex: int):
+    payLoadLengthInBytes = frame[startingPayLoadLengthIndex:endingPayLoadLengthIndex]
+    payLoadBinaryString = ""
+    for b in payLoadLengthInBytes:
+        payLoadBinaryString += formatInt2Bin(b)
+    payLoadLength = int(payLoadBinaryString, 2)
+    return payLoadLength
+
+def prettyPrint(frame:bytes, payloadLength: int):
+    fourBytes = ""
+    count = -1
+    for b in frame:
+        count +=1
+       # print(count)
+        if count > 0 and count % 4 == 0:
+            print(count,fourBytes)
+            # clear fourBytes
+            fourBytes = ""
+        fourBytes += formatInt2Bin(frame[count]) + " " 
+    if fourBytes != '':
+         print(count+1,fourBytes)
+    print("payload length: ",payloadLength)
