@@ -225,13 +225,17 @@ def handshake(request, handler):
     while True:
     # write code to 
         websock_frame = handler.request.recv(1024)
-        websocketString += websock_frame
+        readbytes = 1024
         opcodeMask = 15
         byteOne = websock_frame[0]
         opcode = byteOne & opcodeMask
         if opcode == 8:
             print("yeah the opcode is 8")
-            break
+            byteArrayClose= bytearray()
+            respondFirstByteWeb = 136
+            byteArrayClose.append(respondFirstByteWeb)
+            handler.request.sendall(byteArrayClose)
+          
         byteTwo = websock_frame[1]
         payLoadMask = 127
         decodeMe = ""
@@ -256,9 +260,15 @@ def handshake(request, handler):
                 escapedComment = escape_html(comment)
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
-                print(frameToSend, flush=True)
-                handler.request.sendall(frameToSend)
-                print('\n', flush=True)
+                print("the frame we are sending back >>>> ", frameToSend, flush=True)
+                for connections in MyTCPHandler.websocket_connections:
+                
+                    print("the connections is a >>>> ",type(connections))
+                    handle = connections["websocket"]
+                    handle.request.sendall(frameToSend)
+                # print(frameToSend, flush=True)
+                # handler.request.sendall(frameToSend)
+                # print('\n', flush=True)
         elif initial_payLoadLength_via_byte2 == 126:
             # I don't think I have to add the inital length to the rest of the payload but I will see soon
             byte1 = initial_payLoadLength_via_byte2
@@ -266,34 +276,88 @@ def handshake(request, handler):
             print("the real payload length: ", the_real_payload_length, flush=True) 
             prettyPrint(websock_frame, the_real_payload_length)
             medMaskList = createMaskList(websock_frame, 4, 8)
+            # we need to go back to the websocket to retrieve data 
+            # while bytes read is < the real payload length :
+                # go back to the handler and accumulate the bytes
+                # 
+            while(readbytes < the_real_payload_length + 14):
+                websock_frame += handler.request.recv(1024)
+                readbytes+=1024
+
+
             medPayLoadList = createPayLoad(websock_frame, 8)
             decodeMe = decodeMessage(medPayLoadList, medMaskList)
             print("the length of the payload is : ", len(medPayLoadList), flush=True)
             print("message decoded from 126 plength: ",decodeMe, flush=True)
+            messageDict = json.loads(decodeMe)    
+
+            escapedComment = ""
+            if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
+                print("yes the message does contain a chatMessage", flush=True)
+                comment = messageDict["comment"]
+            # print("this is the comment: ", comment)
+                # need to escape the html of the comment
+                escapedComment = escape_html(comment)
+            #  print("this is the escaped comment: ", escapedComment)
+                frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
+                print("the frame we are sending back >>>> ", frameToSend, flush=True)
+                for connections in MyTCPHandler.websocket_connections:
+                
+                    print("the connections is a >>>> ",type(connections))
+                    handle = connections["websocket"]
+                    handle.request.sendall(frameToSend)
         elif initial_payLoadLength_via_byte2 > 126:
             byteUno = initial_payLoadLength_via_byte2
             the_real_payload_length = calculatePayloadLength(websock_frame, 2, 10) 
             print("more than 126 byte1 payload size = ",the_real_payload_length, flush=True)
-            lgMaskList = createMaskList(websock_frame, 10, 14)
-            lgPayLoadList = createPayLoad(websock_frame, 14)
-            decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
-            print("the length of lgPayloadList:  ", len(lgPayLoadList), flush=True)
-        messageDict = json.loads(decodeMe)    
+            prettyPrint(websock_frame, the_real_payload_length)
 
-        escapedComment = ""
-        if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
-            comment = messageDict["comment"]
-        # print("this is the comment: ", comment)
-            # need to escape the html of the comment
-            escapedComment = escape_html(comment)
-        #  print("this is the escaped comment: ", escapedComment)
-            frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
-            print(frameToSend,flush=True)
-            # for connections in MyTCPHandler.websocket_connections:
-            #     print("the connections is a >>>> ",type(connections))
-            #     handle = connections["websocket"]
-            #     handle.request.sendall(frameToSend)
-            handler.request.sendall(frameToSend)
+            lgMaskList = createMaskList(websock_frame, 10, 14)
+            print("size of large mask List , ", len(lgMaskList))
+            while(readbytes < the_real_payload_length + 14):
+                websock_frame += handler.request.recv(1024)
+                readbytes+=1024
+
+            lgPayLoadList = createPayLoad(websock_frame, 14)
+            print("size of large payload list, ", len(lgPayLoadList))
+            decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
+            print("the decoded message is :" , decodeMe, flush=True)
+            print("the length of lgPayloadList:  ", len(lgPayLoadList), flush=True)
+            messageDict = json.loads(decodeMe)    
+
+            escapedComment = ""
+            if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
+                print("yes the message does contain a chatMessage", flush=True)
+                comment = messageDict["comment"]
+            # print("this is the comment: ", comment)
+                # need to escape the html of the comment
+                escapedComment = escape_html(comment)
+            #  print("this is the escaped comment: ", escapedComment)
+                frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
+                print("the frame we are sending back >>>> ", frameToSend, flush=True)
+                for connections in MyTCPHandler.websocket_connections:
+                
+                    print("the connections is a >>>> ",type(connections))
+                    handle = connections["websocket"]
+                    handle.request.sendall(frameToSend)
+        # messageDict = json.loads(decodeMe)    
+
+        # escapedComment = ""
+        # if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
+        #     comment = messageDict["comment"]
+        # # print("this is the comment: ", comment)
+        #     # need to escape the html of the comment
+        #     escapedComment = escape_html(comment)
+        # #  print("this is the escaped comment: ", escapedComment)
+        #     frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
+        #     # print(frameToSend,flush=True)
+            
+        #     for connections in MyTCPHandler.websocket_connections:
+                
+        #         print("the connections is a >>>> ",type(connections))
+        #         handle = connections["websocket"]
+        #         handle.request.sendall(frameToSend)
+          #  handler.request.sendall(frameToSend)
             print('\n')
         #  print("this is the length of the websocketString: ",len(websocketString), flush = True)
         # print("websocket frame = : ", websocketString, flush=True)
@@ -310,19 +374,83 @@ def generate_websocket_response(body, content_type, response_code, request):
     return r
 
 
+"""
+Do we need to add a mask bit?
+
+Do we base sending the message over the websocket on the initial payload length or the payload length of the response 
+message we created with the username and the messageType?
+                                M
+frame example = 1 0 0 0 0 0 0 1 0 
+
+What happens if the length is greater than 127? How do we create the bytes? To pack into the websocket frame we send back?
+
+If I bit shift >> 1 it puts a 0 on the front and makes the lowest value byte disappear
+If I & mask it, itll keep the highest bit value as 1
+
+Maybe do some math where I am subtracting 128 from the first byte?
+Or maybe covert the integer to binary and bit shift it to place a 0 at the front of the byte? 
+so if we had a       128 in binary
+this              = 1 0 0 0 0 0 0 0 
+this = this >> 1  = 0 1 0 0 0 0 0 0  == 64 now
+
+"""
+
 def sendFrames(escapedCom, username, payLoadLength):
-    frame = b''
-    respondFirstByte = b'100000010'
+    # frame = b''
+    # # byteArrayWeb = bytearray()
+    # respondFirstByte = b'100000010'
+    # # respondFirstByteWeb = 127
+    # # maskbit = 0
+    
     messageToSendBack = {'messageType':'chatMessage', 'username': username, 'comment':escapedCom}
-    messageToSendBackJSON = json.dumps(messageToSendBack)
-    framePayLoadLength = b''
-    # create payload Length 
-    if payLoadLength < 126:
-        framePayLoadLength = formatInt2Bin(payLoadLength)[1:]
-        frame = frame + respondFirstByte + framePayLoadLength.encode() + messageToSendBackJSON.encode()
-        return frame
+    messageToSendBackJSON = json.dumps(messageToSendBack).encode()
+    framePayLoadLength = len(messageToSendBackJSON) 
+    print("the length of the message to send back ", framePayLoadLength)
+    # framePayLoadLength = b''
+    byteArrayWeb = bytearray()
+    respondFirstByteWeb = 129
+    byteArrayWeb.append(respondFirstByteWeb)
+
+    if framePayLoadLength < 126:
+        # byteArrayWeb.append(maskbit)
+        # we set the payload length the same thing as what was sent so no matter what the highest bit will be 0
+        # so I don't have to worry about the mask bit example: (01111101)
+        byteArrayWeb.append(framePayLoadLength)
+        byteArrayWeb += messageToSendBackJSON
+        return byteArrayWeb
+    elif framePayLoadLength >= 126 and framePayLoadLength < 65536:
+        # >=126 and <65536
+        # if the payload length is 126 the highest bit will be 0 example = (01111110)
+        # the first two bytes will be 
+        byteArrayWeb.append(126)
+
+        newPay = framePayLoadLength.to_bytes(2, byteorder="big")
+        byteArrayWeb += newPay
+        byteArrayWeb += messageToSendBackJSON
+        return byteArrayWeb
+    elif framePayLoadLength >= 65536:
+        # if the payload length is greater than the first bit after the payload is (01111111) the rest of the payload
+        # is the framePayload length but we need to convert that into 8 bytes
+        byteArrayWeb.append(127)
+        newPay = framePayLoadLength.to_bytes(8, byteorder="big")
+
+        byteArrayWeb += newPay
+        byteArrayWeb += messageToSendBackJSON
+        return byteArrayWeb
+        """
+        int.to_bytes(length, byteorder, *, signed=False)
+        Return an array of bytes representing an integer.
+
+        >>>
+        (1024).to_bytes(2, byteorder='big')
+        b'\x04\x00'
+        """
+
+    # framePayLoadLength = formatInt2Bin(payLoadLength)[1:]
+        # frame = frame + respondFirstByte + framePayLoadLength.encode() + messageToSendBackJSON.encode()
+        # return frame
     #frame = frame + respondFirstByte + messageToSendBackJSON
-    """
+"""
     Message == 
 {
 'messageType': 'chatMessage', 
@@ -330,7 +458,7 @@ def sendFrames(escapedCom, username, payLoadLength):
 'comment': html_escaped_comment_submitted_by_user
 }
 
-    """
+"""
 
 
 # This function generates the sha1 hash, base64 encodes it and establishes the websocket handshake

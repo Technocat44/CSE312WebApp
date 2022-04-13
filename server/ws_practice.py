@@ -11,6 +11,7 @@ def byte2Binary(bytes):
 def formatInt2Bin(integer):
     formatted = '{0:08b}'.format(integer)
     return formatted
+
 # have to combine the binary of the payload and then convert that into an integer
 def parseWebSocket(sockFrame):
     opMask = 15
@@ -216,12 +217,17 @@ def mask(frame):
         # bytes 1,2,3,4,5,6,7,8,9will make up the payload length
         # bytes 10,11,12,13 will make up the mask
         # bytes 14 - end make up the payload
+        prettyPrint(frame, the_real_payload_length)
+
         lgMaskList = createMaskList(frame, 10, 14)
+        print("size of large mask List , ", len(lgMaskList))
 
         lgPayLoadList = createPayLoad(frame, 14)
-
+        print("size of large payload list, ", len(lgPayLoadList))
         decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
-        print("the length of lgPayloadList:  ", len(lgPayLoadList))
+        
+        print("message decoded from <126 plength: ",decodeMe)
+
     messageDict = json.loads(decodeMe)    
     escapedComment = ""
   #  print(type(dict)) 
@@ -237,14 +243,29 @@ def mask(frame):
 
 def sendFrames(escapedCom, payLoadLength):
     frame = b''
-    respondFirstByte = b'100000010'
-    messageToSendBack = {'messageType':'chatMessage', 'username': 'username', 'comment':escapedCom}
-    messageToSendBackJSON = json.dumps(messageToSendBack)
-    framePayLoadLength = b''
+  
+    messageToSendBack = {'messageType':'chatMessage', 'username': 'sername', 'comment':escapedCom}
+    messageToSendBackJSON = json.dumps(messageToSendBack).encode()
+    framePayLoadLength = len(messageToSendBackJSON)
+    byteArrayWeb = bytearray()
+    respondFirstByteWeb = 127
+    maskbit = 0
+  
+    # respondFirstByte = b'100000010'
+    print("THIS is the lenght of teh frame: ", framePayLoadLength)
+   
     # create payload Length 
     if payLoadLength < 126:
-        framePayLoadLength = formatInt2Bin(payLoadLength)[1:]
-        frame = frame + respondFirstByte + framePayLoadLength.encode() + messageToSendBackJSON.encode()
+        byteArrayWeb.append(respondFirstByteWeb)
+        byteArrayWeb.append(maskbit)
+        byteArrayWeb.append(framePayLoadLength)
+        byteArrayWeb += messageToSendBackJSON
+        # framePayLoadLength = formatInt2Bin(framePayLoadLength)[1:].encode()
+        # frame += respondFirstByte
+        # frame += framePayLoadLength
+        # frame += messageToSendBackJSON
+      #  frame = frame + respondFirstByte + framePayLoadLength.encode() + messageToSendBackJSON.encode()
+        return byteArrayWeb
     """
     Message == 
 {
