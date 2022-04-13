@@ -1,6 +1,7 @@
 # https://stackoverflow.com/questions/10411085/converting-integer-to-binary-in-python
 
 import json
+from re import S
 
 def byte2Binary(bytes):
     return bin(int(f'{bytes}', base=16)).lstrip('0b')
@@ -175,13 +176,14 @@ def mask(frame):
     if opcode == 8:
         pass # break
     byteTwo = frame[1]
-    payMask = 127
+    payLoadMask = 127
     decodeMe = ""
-    binaryPayloadStringLength = ""
-    payLoadLength = byteTwo & payMask
+    payLoadLength = byteTwo & payLoadMask
+    the_real_payload_length = 0
  #   print("this is the payloadLength after a mask", formatInt2Bin(payLoadLength))
     if payLoadLength < 126:
         prettyPrint(frame, payLoadLength)
+        the_real_payload_length = payLoadLength
         smallMaskList= createMaskList(frame, 2, 6)
         smallpayloadList = createPayLoad(frame, 6)
 
@@ -208,9 +210,9 @@ def mask(frame):
         # bytes 8-end will make up the payload 
     elif payLoadLength > 126:
         byteUno = payLoadLength
-        the_very_real_payload_length = calculatePayloadLength(frame, 2, 10) 
+        the_real_payload_length = calculatePayloadLength(frame, 2, 10) 
 
-        print("more than 126 byte1 payload size = ",the_very_real_payload_length)
+        print("more than 126 byte1 payload size = ",the_real_payload_length)
         # bytes 1,2,3,4,5,6,7,8,9will make up the payload length
         # bytes 10,11,12,13 will make up the mask
         # bytes 14 - end make up the payload
@@ -220,23 +222,29 @@ def mask(frame):
 
         decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
         print("the length of lgPayloadList:  ", len(lgPayLoadList))
-    dict =json.loads(decodeMe) 
+    messageDict = json.loads(decodeMe)    
     escapedComment = ""
   #  print(type(dict)) 
-    if dict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
-        comment = dict["comment"]
+    if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
+        comment = messageDict["comment"]
        # print("this is the comment: ", comment)
         # need to escape the html of the comment
         escapedComment = escape_html(comment)
       #  print("this is the escaped comment: ", escapedComment)
+        frameToSend = sendFrames(escapedComment, the_real_payload_length )
+        print("this is the frame to send", frameToSend)
     print('\n')
 
-def sendFrames(escapedCom):
+def sendFrames(escapedCom, payLoadLength):
     frame = b''
-    respondFirstByte = '100000010'.encode()
-    messageToSendBack = {'messageType':'chatMessage', 'username': 'randomUser', 'comment':escapedCom}
-    messageToSendBackJSON = json.loads(messageToSendBack)
-
+    respondFirstByte = b'100000010'
+    messageToSendBack = {'messageType':'chatMessage', 'username': 'username', 'comment':escapedCom}
+    messageToSendBackJSON = json.dumps(messageToSendBack)
+    framePayLoadLength = b''
+    # create payload Length 
+    if payLoadLength < 126:
+        framePayLoadLength = formatInt2Bin(payLoadLength)[1:]
+        frame = frame + respondFirstByte + framePayLoadLength.encode() + messageToSendBackJSON.encode()
     """
     Message == 
 {

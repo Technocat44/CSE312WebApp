@@ -8,9 +8,10 @@ from server.osHandlers import addForwardSlash
 from server.request import Request
 from server.router import Router
 from server.user_paths import add_paths
-from server.websocket import add_paths as websocket_paths
+
 from server.html_paths import add_paths as html_paths
 from server.static_paths import add_paths as other_paths
+from server.websocket import add_paths as websocket_paths
 
 from server.fileHandling import all_bytes_of_file
 # from server.fileHandling import all_bytes_of_file
