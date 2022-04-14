@@ -281,7 +281,7 @@ def handshake(request, handler):
             smallpayloadList = createPayLoad(websock_frame, 6)
             decodeMe = decodeMessage(smallpayloadList, smallMaskList)
        #     print("the length of the payload is: ", len(smallpayloadList), flush=True)
-        #    print("message decoded of <125 plength: ",decodeMe, flush=True)
+            print("message decoded of <125 plength: ",decodeMe, flush=True)
             messageDict = json.loads(decodeMe)    
 
             escapedComment = ""
@@ -315,27 +315,31 @@ def handshake(request, handler):
                 pass
             elif messageDict.get("messageType") == "webRTC-candidate":
                 pass
+                # Your task is to extract the payload of these WebSocket messages, verify that they are not chat messages 
+                # (and are WebRTC messages), then send the payload to the other WebSocket connection. 
+                # The clients will do the rest through the front end.
+                # Extract the payload from the WB frame, build a new frame with the exact payload and send it to the other peer
 
         elif initial_payLoadLength_via_byte2 == 126:
             # I don't think I have to add the inital length to the rest of the payload but I will see soon
             byte1 = initial_payLoadLength_via_byte2
             the_real_payload_length = calculatePayloadLength(websock_frame, 2,4) 
-     #       print("the real payload length: ", the_real_payload_length, flush=True) 
-      #      prettyPrint(websock_frame, the_real_payload_length)
+            print("the real payload length: ", the_real_payload_length, flush=True) 
+            prettyPrint(websock_frame, the_real_payload_length)
             medMaskList = createMaskList(websock_frame, 4, 8)
             # we need to go back to the websocket to retrieve data 
             # while bytes read is < the real payload length :
                 # go back to the handler and accumulate the bytes
                 # 
-            while(readbytes < the_real_payload_length + 14):
+            while(readbytes < the_real_payload_length + 8):
                 websock_frame += handler.request.recv(1024)
                 readbytes+=1024
-
-
+            print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush = True)
+            readbytes = 1024
             medPayLoadList = createPayLoad(websock_frame, 8)
             decodeMe = decodeMessage(medPayLoadList, medMaskList)
-        #    print("the length of the payload is : ", len(medPayLoadList), flush=True)
-       #     print("message decoded from 126 plength: ",decodeMe, flush=True)
+           # print("the length of the payload is : ", len(medPayLoadList), flush=True)
+            print("message decoded from 126 plength: ",decodeMe, flush=True)
             messageDict = json.loads(decodeMe)    
 
             escapedComment = ""
@@ -365,11 +369,14 @@ def handshake(request, handler):
             while(readbytes < the_real_payload_length + 14):
                 websock_frame += handler.request.recv(1024)
                 readbytes+=1024
+            print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush =True)
 
+            readbytes = 1024
+            
             lgPayLoadList = createPayLoad(websock_frame, 14)
        #     print("size of large payload list, ", len(lgPayLoadList))
             decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
-       #     print("the decoded message is :" , decodeMe, flush=True)
+            print("the decoded message is :" , decodeMe, flush=True)
         #    print("the length of lgPayloadList:  ", len(lgPayLoadList), flush=True)
             messageDict = json.loads(decodeMe)    
 
