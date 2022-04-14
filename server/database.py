@@ -40,11 +40,21 @@ users_collection = db['users'] # one collection for users
 users_id_collection = db["users_id"] # one collection for users ids
 comment_and_image_name_from_html_collection = db["comment_image_name"] # a collection for uploaded comments and image names
 xsrf_collection = db["tokens"] # a collection of xsrf token's created on homepage load
+webchat_history = db["chat-history"]
 
 #print(mongo_client.list_database_names())
 #chat_collection.insert()
 # we can store a comment and image name that a user sent as a request.
 # if they only send a comment, the imageName will be None
+
+
+def store_wehsocket_chat(user, message):
+  webchat_history.insert_one({"username": user , "comment": message} )
+
+def get_wehsocket_chat():
+  allchat = webchat_history.find( {}, {"_id":0})
+  return list(allchat)
+
 def store_xsrf_token(token):
   xsrf_collection.insert_one({"token" : token})
 

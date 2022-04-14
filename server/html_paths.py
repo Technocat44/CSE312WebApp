@@ -1,7 +1,6 @@
 
 import secrets
 import os
-from xmlrpc.client import ResponseError
 import server.database as db
 from server.router import Route
 from server.response import generate_response, redirect
