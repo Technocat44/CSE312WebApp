@@ -1,3 +1,4 @@
+import re
 from server.response import generate_response
 from server.router import Route
 from server.request import Request
@@ -245,9 +246,16 @@ def handshake(request, handler):
 
     while True:
     # write code to 
-    #    print("[[INITIATING WEBSOCKET]]",flush =True)
+        print("[[INITIATING WEBSOCKET]]",flush =True)
         websock_frame = handler.request.recv(1024)
-        readbytes = 1024
+        #TODO: Change this to be the len(readbytes
+        # )
+        """
+        I change it to be the length of websocket
+        """
+        readbytes = len(websock_frame)
+        print("this is the size of the INITIAL read bytes : ", readbytes, flush=True)
+        #readbytes = 1024
         opcodeMask = 15
         byteOne = websock_frame[0]
         opcode = byteOne & opcodeMask
@@ -393,7 +401,10 @@ def handshake(request, handler):
 
         elif initial_payLoadLength_via_byte2 == 126:
             # I don't think I have to add the inital length to the rest of the payload but I will see soon
+            print("THE INITIAL LENGTH OF PAYLOAD IS 126", flush=True)
+            print("the inital payloadlength from the byte", initial_payLoadLength_via_byte2, flush=True)
             byte1 = initial_payLoadLength_via_byte2
+            print("inital lenght of payload: ", initial_payLoadLength_via_byte2, flush=True)
             the_real_payload_length = calculatePayloadLength(websock_frame, 2,4) 
             # print("the real payload length: ", the_real_payload_length, flush=True) 
             medMaskList = createMaskList(websock_frame, 4, 8)
@@ -401,23 +412,49 @@ def handshake(request, handler):
             # while bytes read is < the real payload length :
                 # go back to the handler and accumulate the bytes
                 # 
-            while(readbytes < the_real_payload_length + 8):
-                # print("yes readbytes is less than the payload length:" , readbytes, flush =True)
-                websock_frame += handler.request.recv(1024)
-                readbytes+=1024
 
-            
+            """
+        
+            count the length of the websocket frame, cant assume that I am reading 1024 bytes on each 
+
+            """
+            print("this is the size of the payloadLength" , the_real_payload_length+8, flush=True)
+            while(readbytes <= the_real_payload_length + 8):
+                print("yes readbytes is less than the payload length readbytes = " , readbytes, flush =True)
+                if the_real_payload_length+8 - readbytes < 1024:
+                    print("the payload length - readbytes =  :" , the_real_payload_length+8 - readbytes, flush=True)
+                    websock_frame += handler.request.recv(the_real_payload_length+8-readbytes)
+                    readbytes = len(websock_frame)
+                    break
+                else:
+                    websock_frame += handler.request.recv(1024)
+                    print("no the payload length - read bytes is not < 1024, the lenght of the websock frame is:  ",len(websock_frame), flush=True )
+                    
+
+                    readbytes = len(websock_frame)
+                    print("this is how many bytes weve read: ", readbytes, flush=True)
+                """
+                changed this to count the length of the bytes read so we can get exact
+                """
+                
+            print("this is the length of read bytes inside of 126, ", readbytes, flush=True)
+                # readbytes+=1024
+
+            readbytes=0
             # print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush = True)
             # prettyPrint(websock_frame, the_real_payload_length)
-
-            readbytes = 1024
-            medPayLoadList = createPayLoad(websock_frame, 8, the_real_payload_length+8)
-            # print(f"THIS IS THE PAYLOAD size {len(medPayLoadList)} ", flush=True)
-            # print(f"This is the maskList size {len(medMaskList)} and LIST: ", medMaskList, flush=True)
+            """
+            # TODO: I am not going to reset the bytes here
+            """
+            # readbytes = 1024
+            medPayLoadList = createPayLoad(websock_frame, 8, the_real_payload_length+1)
+            print(f"THIS IS THE PAYLOAD size {len(medPayLoadList)} ", flush=True)
+            print(f"This is the maskList size {len(medMaskList)} and LIST: ", medMaskList, flush=True)
             decodeMe = decodeMessage(medPayLoadList, medMaskList)
            # print("the length of the payload is : ", len(medPayLoadList), flush=True)
-            # print("message decoded from 126 plength: ",decodeMe, flush=True)
+         #   print("message decoded from 126 plength: ",decodeMe, flush=True)
             escapedComment = ""
+            print("the decoded message is :" , decodeMe, " LENGTH OF THE DECODED MESSAGE: ", len(decodeMe), flush=True)
             # print("the result of decodeMe.find('chatmessage'): ", decodeMe.find("chatMessage") , flush=True)
             # print("the result of decodeMe.find('webRTC-offer'): ", decodeMe.find("webRTC-offer") , flush=True)
             # print("the result of decodeMe.find('webRTC-candidate'): ", decodeMe.find("webRTC-candidate") , flush=True)
@@ -509,28 +546,50 @@ def handshake(request, handler):
 
 
         elif initial_payLoadLength_via_byte2 > 126:
+            print("THE INITIAL LENGTH OF PAYLOAD IS 127", flush=True)
+            print("the inital payloadlength from the byte", initial_payLoadLength_via_byte2, flush=True)
             byteUno = initial_payLoadLength_via_byte2
             the_real_payload_length = calculatePayloadLength(websock_frame, 2, 10) 
             print("the real payload length = ",the_real_payload_length, flush=True)
 
             lgMaskList = createMaskList(websock_frame, 10, 14)
-       #     print("size of large mask List , ", len(lgMaskList))
-            while(readbytes < the_real_payload_length + 14):
-                websock_frame += handler.request.recv(1024)
-                readbytes+=1024
-            print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush =True)
-           # prettyPrint(websock_frame, the_real_payload_length)
+            print("this is the size of the payloadLength" , the_real_payload_length+14, flush=True)
+            while(readbytes <= the_real_payload_length + 14):
+                print("yes readbytes is less than the payload length readbytes = " , readbytes, flush =True)
+                if the_real_payload_length+14 - readbytes < 1024:
+                    print("the payload length - readbytes =  :" , the_real_payload_length+14 - readbytes, flush=True)
+                    websock_frame += handler.request.recv(the_real_payload_length+14-readbytes)
+                    readbytes = len(websock_frame)
+                    break
+                else:
+                    websock_frame += handler.request.recv(1024)
+                    print("no the payload length - read bytes is not < 1024, the lenght of the websock frame is:  ",len(websock_frame), flush=True )
+                    
 
-            #readbytes = 1024
-            
-            lgPayLoadList = createPayLoad(websock_frame, 14, the_real_payload_length+14)
+                    readbytes = len(websock_frame)
+                    print("this is how many bytes weve read: ", readbytes, flush=True)
+                """
+                changed this to count the length of the bytes read so we can get exact
+                """
+                
+            print("this is the length of read bytes inside of 126, ", readbytes, flush=True)
+           # prettyPrint(websock_frame, the_real_payload_length)
+            """
+            # TODO: I am commenting this out and not resetting it
+            """
+            readbytes =0
+            # TODO: I am only creating a payload of the payloaf length size + 1
+            # testing this out
+            lgPayLoadList = createPayLoad(websock_frame, 14, the_real_payload_length+1)
             print("size of large payload list, ", len(lgPayLoadList), flush=True)
             decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
-            print("the decoded message is :" , decodeMe, flush=True)
+            print("the decoded message is :" , decodeMe, "LENGTH OF THE DECODED MESSAGE: ", len(decodeMe), flush=True)
         #    print("the length of lgPayloadList:  ", len(lgPayLoadList), flush=True)
           #  messageDict = json.loads(decodeMe)    
 
             escapedComment = ""
+            print("LENGTH OF THE DECODED MESSAGE , ", len(decodeMe), flush=True)
+
             # the chat messsage index should be 17  {"messageType":"chatMessage"
             if decodeMe.find("chatMessage") == 16: # this could be a webrtc so we have to check 
                 # print("yes the message does contain a chatMessage", flush=True)
@@ -544,6 +603,7 @@ def handshake(request, handler):
 
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
+                print("the length of the frame we are sending back: ".upper(), len(frameToSend), flush=True)
           #      print("the frame we are sending back >>>> ", frameToSend, flush=True)
                 for connections in MyTCPHandler.websocket_connections:
                 
@@ -744,8 +804,8 @@ def decodeMessage(payloadByteList: list, maskbyteList: list):
             payIndex+=1 
             ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
             asciiStr += ascii_ch 
-    print("this is the payindex size ",payIndex, flush=True)
-    print("payindex should match the payload length ", len(payloadByteList), flush=True)
+    print("this is the payindex size [Inside decodeMessage]: ",payIndex, flush=True)
+    print("payindex should match the payload length [inside decodeMessage]: ", len(payloadByteList), flush=True)
     return asciiStr
 
 # this function takes in a string and escapes any html injections
@@ -763,9 +823,12 @@ def createMaskList(frame: bytes, startingMaskIndex: int, endingMaskIndex: int):
 # this function takes in a websocket frame, and based on the payload length parses the bytes of the frame into a list
 def createPayLoad(frame: bytes, startingPayLoadIndex: int, payloadLength:int):
     payLoadList = []
-    payload = frame[startingPayLoadIndex:payloadLength+1]
+    payload = frame[startingPayLoadIndex:]
+    print("the length of the payload when we create it [Inside createPayload], ", len(payload), flush=True)
     for bytes in payload:
         payLoadList.append(formatInt2Bin(bytes))
+    print("pretty printing the payload list we created: ", flush=True)
+    #prettyPrint(payload, len(payLoadList))
     return payLoadList
 
 # this function takes in a frame and determines the integer value of the payload length from the websocket frame
@@ -778,17 +841,22 @@ def calculatePayloadLength(frame: bytes, startingPayLoadLengthIndex: int, ending
     return payLoadLength
 
 def prettyPrint(frame:bytes, payloadLength: int):
+    print("this is the size of the frame [inside pretty print]: ", len(frame), flush=True)
+    print("this is the size of the payload length [inside pretty print]: ", payloadLength, flush=True  )
+
     fourBytes = ""
     count = -1
-    while(count <= payloadLength):
+    while(count < payloadLength):
         count +=1
-       # print(count)
+        if count == payloadLength:
+            break
         
         if count > 0 and count % 4 == 0:
             print(count,fourBytes)
             # clear fourBytes
             fourBytes = ""
+        #print("this is the count index [inside pretty printing]: ", count, flush=True)
         fourBytes += formatInt2Bin(frame[count]) + " " 
     if fourBytes != '':
-         print(count+1,fourBytes, flush=True)
+         print(count,fourBytes, flush=True)
     print("payload length: ",payloadLength, flush=True)
