@@ -40,7 +40,7 @@ users_collection = db['users'] # one collection for users
 users_id_collection = db["users_id"] # one collection for users ids
 comment_and_image_name_from_html_collection = db["comment_image_name"] # a collection for uploaded comments and image names
 xsrf_collection = db["tokens"] # a collection of xsrf token's created on homepage load
-webchat_history = db["chat-history"]
+webchat_history = db["chathistory"]
 
 #print(mongo_client.list_database_names())
 #chat_collection.insert()

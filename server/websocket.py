@@ -245,6 +245,7 @@ def handshake(request, handler):
 
     while True:
     # write code to 
+    #    print("[[INITIATING WEBSOCKET]]",flush =True)
         websock_frame = handler.request.recv(1024)
         readbytes = 1024
         opcodeMask = 15
@@ -257,18 +258,28 @@ def handshake(request, handler):
             respondFirstByteWeb = 136
             byteArrayClose.append(respondFirstByteWeb)
             handler.request.sendall(byteArrayClose)
-            for dicts in range(len(MyTCPHandler.websocket_connections)):
-                if dicts > len(MyTCPHandler.websocket_connections):
+            for dict in MyTCPHandler.websocket_connections:
+       #         print("this is a dict in the websocket_connection list :", dict, flush =True)
+        #        print(f"is username:{username} in ws_dict:{dict} ? ", username in dict , flush=True)
+                if username in dict.values():
+         #           print("yes the username is in the dictionary!", flush=True)
+                    MyTCPHandler.websocket_connections.remove(dict)
                     break
-           #     print("this is a dict in the websocket list: ", MyTCPHandler.websocket_connections[dicts], flush=True)
-                for k in MyTCPHandler.websocket_connections[dicts].keys():
-                #    print("this is the keys: ", k, flush=True)
-                #    print("this is the username ", username, flush=True)
-                    if MyTCPHandler.websocket_connections[dicts][k] == username:
-                        MyTCPHandler.websocket_connections.pop(dicts)
-                        break
-        #    print("now this the websocket connection list after: ", MyTCPHandler.websocket_connections, flush =True)
+        #    print("this is the list after we removed the disconnecting socket: ", MyTCPHandler.websocket_connections, flush=True)
+
             break
+            # for dicts in range(len(MyTCPHandler.websocket_connections)):
+            #     if dicts >= len(MyTCPHandler.websocket_connections):
+            #         break
+            #     print("this is a dict in the websocket list: ", MyTCPHandler.websocket_connections[dicts], flush=True)
+            #     for k in MyTCPHandler.websocket_connections[dicts].keys():
+            #     #    print("this is the keys: ", k, flush=True)
+            #     #    print("this is the username ", username, flush=True)
+            #         if MyTCPHandler.websocket_connections[dicts][k] == username:
+            #             MyTCPHandler.websocket_connections.pop(dicts)
+            #             break
+            # print("now this the websocket connection list after: ", MyTCPHandler.websocket_connections, flush =True)
+            # break
         byteTwo = websock_frame[1]
         payLoadMask = 127
         decodeMe = ""
@@ -278,15 +289,21 @@ def handshake(request, handler):
             the_real_payload_length = initial_payLoadLength_via_byte2
         #    prettyPrint(websock_frame, initial_payLoadLength_via_byte2)
             smallMaskList= createMaskList(websock_frame, 2, 6)
-            smallpayloadList = createPayLoad(websock_frame, 6)
+            smallpayloadList = createPayLoad(websock_frame, 6, the_real_payload_length+6)
             decodeMe = decodeMessage(smallpayloadList, smallMaskList)
-       #     print("the length of the payload is: ", len(smallpayloadList), flush=True)
-            print("message decoded of <125 plength: ",decodeMe, flush=True)
-            messageDict = json.loads(decodeMe)    
+    #        print("the length of the payload is: ", len(smallpayloadList), flush=True)
+    #        print("message decoded of <125 plength: ",decodeMe, flush=True)
+             
 
             escapedComment = ""
-            if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
-                print("yes the message does contain a chatMessage", flush=True)
+            # print("the result of decodeMe.find('chatmessage'): ", decodeMe.find("chatMessage") , flush=True)
+            # print("the result of decodeMe.find('webRTC-offer'): ", decodeMe.find("webRTC-offer") , flush=True)
+            # print("the result of decodeMe.find('webRTC-candidate'): ", decodeMe.find("webRTC-candidate") , flush=True)
+            # print("the result of decodeMe.find('webRTC-answer'): ", decodeMe.find("webRTC-answer") , flush=True)
+
+            if decodeMe.find("chatMessage") == 16: # this could be a webrtc so we have to check 
+         #       print("yes the message does contain a chatMessage", flush=True)
+                messageDict = json.loads(decodeMe)
                 comment = messageDict["comment"]
             # print("this is the comment: ", comment)
                 # need to escape the html of the comment
@@ -295,7 +312,7 @@ def handshake(request, handler):
 
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
-                print("the frame we are sending back >>>> ", frameToSend, flush=True)
+        #        print("the frame we are sending back >>>> ", frameToSend, flush=True)
                 for connections in MyTCPHandler.websocket_connections:
                 
                #     print("the connections is a >>>> ",type(connections))
@@ -304,47 +321,111 @@ def handshake(request, handler):
                 # print(frameToSend, flush=True)
                 # handler.request.sendall(frameToSend)
                 # print('\n', flush=True)
-                """
-                {'messageType': 'webRTC-offer', 'offer': offer}
-                {'messageType': 'webRTC-answer', 'answer': answer}
-                {'messageType': 'webRTC-candidate', 'candidate': candidate}
-                """
-            elif messageDict.get("messageType") == "webRTC-offer":
-                pass
-            elif messageDict.get("messageType") == "webRTC-answer":
-                pass
-            elif messageDict.get("messageType") == "webRTC-candidate":
-                pass
+                
+                #{'messageType': 'webRTC-offer', 'offer': offer}
+                #{'messageType': 'webRTC-answer', 'answer': answer}
+                #{'messageType': 'webRTC-candidate', 'candidate': candidate}
+                
+
+
+            elif decodeMe.find("webRTC-offer") == 16:
+        #        print("yes we got an OFFER", flush = True)
+                frameSending = sendWebRTCFrames(decodeMe, "offer")
+
+                for hand in MyTCPHandler.websocket_connections:
+          #          print("this is the dict : ", hand,flush=True)
+                    # if the username doesn't match we know this is the other user we are trying to connect to
+                    if username != hand["username"]:
+                        # print("current username", username, flush=True)
+                        # print("opposite username", hand["username"], flush=True)
+                    # we want to find the handler that isn't the current and send it to the other
+                        otherHandler = hand["websocket"]
+                    # we send those frames to that specific handler on the websocket connection
+                        otherHandler.request.sendall(frameSending)
+                        # print("send the frame to the other user, ", flush=True)
+                        break
+                # print("this is the frame we are sending back: ", frameSending, flush=True)
+
+            elif decodeMe.find("webRTC-answer") == 16:
+                # print("yes we got an ANSWER < 126 ", flush=True)
+                frameSending = sendWebRTCFrames(decodeMe, "answer")
+
+                for hand in MyTCPHandler.websocket_connections:
+                    # print("this is the dict : ", hand,flush=True)
+                    # if the username doesn't match we know this is the other user we are trying to connect to
+                    if username != hand["username"]:
+                        # print("current username", username, flush=True)
+                        # print("opposite username", hand["username"], flush=True)
+                    # we want to find the handler that isn't the current and send it to the other
+                        otherHandler = hand["websocket"]
+                    # we send those frames to that specific handler on the websocket connection
+                        otherHandler.request.sendall(frameSending)
+                        # print("send the frame to the other user, ", flush=True)
+                        break
+                # print("this is the frame we are sending back: ", frameSending, flush=True)
+
+            elif decodeMe.find("webRTC-candidate") == 16:
+                # print("we got a CANDIDATE" , flush = True)
+                frameSending = sendWebRTCFrames(decodeMe, "candidate")
+
+                for hand in MyTCPHandler.websocket_connections:
+                    # print("this is the dict : ", hand,flush=True)
+                    # if the username doesn't match we know this is the other user we are trying to connect to
+                    if username != hand["username"]:
+                        # print("current username", username, flush=True)
+                        # print("opposite username", hand["username"], flush=True)
+                    # we want to find the handler that isn't the current and send it to the other
+                        otherHandler = hand["websocket"]
+                    # we send those frames to that specific handler on the websocket connection
+                        otherHandler.request.sendall(frameSending)
+                        # print("send the frame to the other user, ", flush=True)
+                        break
+                # print("this is the frame we are sending back: ", frameSending, flush=True)
+
                 # Your task is to extract the payload of these WebSocket messages, verify that they are not chat messages 
                 # (and are WebRTC messages), then send the payload to the other WebSocket connection. 
                 # The clients will do the rest through the front end.
                 # Extract the payload from the WB frame, build a new frame with the exact payload and send it to the other peer
 
+
+
+
+
         elif initial_payLoadLength_via_byte2 == 126:
             # I don't think I have to add the inital length to the rest of the payload but I will see soon
             byte1 = initial_payLoadLength_via_byte2
             the_real_payload_length = calculatePayloadLength(websock_frame, 2,4) 
-            print("the real payload length: ", the_real_payload_length, flush=True) 
-            prettyPrint(websock_frame, the_real_payload_length)
+            # print("the real payload length: ", the_real_payload_length, flush=True) 
             medMaskList = createMaskList(websock_frame, 4, 8)
             # we need to go back to the websocket to retrieve data 
             # while bytes read is < the real payload length :
                 # go back to the handler and accumulate the bytes
                 # 
             while(readbytes < the_real_payload_length + 8):
+                # print("yes readbytes is less than the payload length:" , readbytes, flush =True)
                 websock_frame += handler.request.recv(1024)
                 readbytes+=1024
-            print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush = True)
+
+            
+            # print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush = True)
+            # prettyPrint(websock_frame, the_real_payload_length)
+
             readbytes = 1024
-            medPayLoadList = createPayLoad(websock_frame, 8)
+            medPayLoadList = createPayLoad(websock_frame, 8, the_real_payload_length+8)
+            # print(f"THIS IS THE PAYLOAD size {len(medPayLoadList)} ", flush=True)
+            # print(f"This is the maskList size {len(medMaskList)} and LIST: ", medMaskList, flush=True)
             decodeMe = decodeMessage(medPayLoadList, medMaskList)
            # print("the length of the payload is : ", len(medPayLoadList), flush=True)
-            print("message decoded from 126 plength: ",decodeMe, flush=True)
-            messageDict = json.loads(decodeMe)    
-
+            # print("message decoded from 126 plength: ",decodeMe, flush=True)
             escapedComment = ""
-            if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
-                print("yes the message does contain a chatMessage", flush=True)
+            # print("the result of decodeMe.find('chatmessage'): ", decodeMe.find("chatMessage") , flush=True)
+            # print("the result of decodeMe.find('webRTC-offer'): ", decodeMe.find("webRTC-offer") , flush=True)
+            # print("the result of decodeMe.find('webRTC-candidate'): ", decodeMe.find("webRTC-candidate") , flush=True)
+            # print("the result of decodeMe.find('webRTC-answer'): ", decodeMe.find("webRTC-answer") , flush=True)
+
+            if decodeMe.find("chatMessage") == 16: # this could be a webrtc so we have to check 
+                # print("yes the message does contain a chatMessage", flush=True)
+                messageDict = json.loads(decodeMe)    
                 comment = messageDict["comment"]
             # print("this is the comment: ", comment)
                 # need to escape the html of the comment
@@ -352,17 +433,85 @@ def handshake(request, handler):
                 db.store_wehsocket_chat(username, escapedComment)
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
-                print("the frame we are sending back >>>> ", frameToSend, flush=True)
+                # print("the frame we are sending back >>>> ", frameToSend, flush=True)
                 for connections in MyTCPHandler.websocket_connections:
                 
          #           print("the connections is a >>>> ",type(connections))
                     handle = connections["websocket"]
                     handle.request.sendall(frameToSend)
+            # elif messageDict.get("messageType") == "webRTC-offer":
+            #     print("yes we got an OFFER", flush = True)
+            # elif messageDict.get("messageType") == "webRTC-answer":
+            #     pass
+            # elif messageDict.get("messageType") == "webRTC-candidate":
+            #     print("we got a CANDIDATE" , flush = True)
+            elif decodeMe.find("webRTC-offer") == 16:
+                # print("yes we got an OFFER", flush = True)
+                frameSending = sendWebRTCFrames(decodeMe, "offer")
+
+                for hand in MyTCPHandler.websocket_connections:
+                    # print("this is the dict : ", hand,flush=True)
+                    # if the username doesn't match we know this is the other user we are trying to connect to
+                    if username != hand["username"]:
+                        # print("current username", username, flush=True)
+                        # print("opposite username", hand["username"], flush=True)
+                    # we want to find the handler that isn't the current and send it to the other
+                        otherHandler = hand["websocket"]
+                    # we send those frames to that specific handler on the websocket connection
+                        otherHandler.request.sendall(frameSending)
+                        # print("send the frame to the other user, ", flush=True)
+                        break
+                # print("this is the frame we are sending back: ", frameSending, flush=True)
+            elif decodeMe.find("webRTC-answer") == 16:
+                # print("yes we got an ANSWER", flush=True)
+                frameSending = sendWebRTCFrames(decodeMe, "answer")
+
+                for hand in MyTCPHandler.websocket_connections:
+                    # print("this is the dict : ", hand,flush=True)
+                    # if the username doesn't match we know this is the other user we are trying to connect to
+                    if username != hand["username"]:
+                        # print("current username", username, flush=True)
+                        # print("opposite username", hand["username"], flush=True)
+                    # we want to find the handler that isn't the current and send it to the other
+                        otherHandler = hand["websocket"]
+                    # we send those frames to that specific handler on the websocket connection
+                        otherHandler.request.sendall(frameSending)
+                        # print("send the frame to the other user, ", flush=True)
+                        break
+                # print("this is the frame we are sending back: ", frameSending, flush=True)
+
+            elif decodeMe.find("webRTC-candidate") == 16:
+                # print("we got a CANDIDATE" , flush = True)
+                frameSending = sendWebRTCFrames(decodeMe, "candidate")
+
+                for hand in MyTCPHandler.websocket_connections:
+                    # print("this is the dict : ", hand,flush=True)
+                    # if the username doesn't match we know this is the other user we are trying to connect to
+                    if username != hand["username"]:
+                        # print("current username", username, flush=True)
+                        # print("opposite username", hand["username"], flush=True)
+                    # we want to find the handler that isn't the current and send it to the other
+                        otherHandler = hand["websocket"]
+                    # we send those frames to that specific handler on the websocket connection
+                        otherHandler.request.sendall(frameSending)
+                        # print("send the frame to the other user, ", flush=True)
+                        break
+                # print("this is the frame we are sending back: ", frameSending, flush=True)
+
+
+
+
+
+
+
+
+
+
+
         elif initial_payLoadLength_via_byte2 > 126:
             byteUno = initial_payLoadLength_via_byte2
             the_real_payload_length = calculatePayloadLength(websock_frame, 2, 10) 
-        #    print("more than 126 byte1 payload size = ",the_real_payload_length, flush=True)
-         #   prettyPrint(websock_frame, the_real_payload_length)
+            print("the real payload length = ",the_real_payload_length, flush=True)
 
             lgMaskList = createMaskList(websock_frame, 10, 14)
        #     print("size of large mask List , ", len(lgMaskList))
@@ -370,25 +519,29 @@ def handshake(request, handler):
                 websock_frame += handler.request.recv(1024)
                 readbytes+=1024
             print(f"this is how many bytes were read {readbytes}, and this is how large the payload length is {the_real_payload_length} ", flush =True)
+           # prettyPrint(websock_frame, the_real_payload_length)
 
-            readbytes = 1024
+            #readbytes = 1024
             
-            lgPayLoadList = createPayLoad(websock_frame, 14)
-       #     print("size of large payload list, ", len(lgPayLoadList))
+            lgPayLoadList = createPayLoad(websock_frame, 14, the_real_payload_length+14)
+            print("size of large payload list, ", len(lgPayLoadList), flush=True)
             decodeMe = decodeMessage(lgPayLoadList, lgMaskList)
             print("the decoded message is :" , decodeMe, flush=True)
         #    print("the length of lgPayloadList:  ", len(lgPayLoadList), flush=True)
-            messageDict = json.loads(decodeMe)    
+          #  messageDict = json.loads(decodeMe)    
 
             escapedComment = ""
-            if messageDict.get("messageType") == "chatMessage": # this could be a webrtc so we have to check 
-                print("yes the message does contain a chatMessage", flush=True)
+            # the chat messsage index should be 17  {"messageType":"chatMessage"
+            if decodeMe.find("chatMessage") == 16: # this could be a webrtc so we have to check 
+                # print("yes the message does contain a chatMessage", flush=True)
+                messageDict = json.loads(decodeMe) 
                 comment = messageDict["comment"]
-            # print("this is the comment: ", comment)
+               # print("this is the comment: ", comment, flush =True)
                 # need to escape the html of the comment
+                escapedComment = escape_html(comment)
+
                 db.store_wehsocket_chat(username, escapedComment)
 
-                escapedComment = escape_html(comment)
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, username, the_real_payload_length)
           #      print("the frame we are sending back >>>> ", frameToSend, flush=True)
@@ -397,6 +550,12 @@ def handshake(request, handler):
             #        print("the connections is a >>>> ",type(connections))
                     handle = connections["websocket"]
                     handle.request.sendall(frameToSend)
+            elif decodeMe.find("webRTC-offer") == 16:
+                pass
+            elif decodeMe.find("webRTC-answer") == 16:
+                pass
+            elif decodeMe.find("webRTC-candidate") == 16:
+                pass
         # messageDict = json.loads(decodeMe)    
 
         # escapedComment = ""
@@ -451,13 +610,31 @@ this              = 1 0 0 0 0 0 0 0
 this = this >> 1  = 0 1 0 0 0 0 0 0  == 64 now
 
 """
+def sendWebRTCFrames(decodedMessage, typeOfMessage):
+
+    messageToSendJSON = decodedMessage.encode()
+    framePayloadLength = len(messageToSendJSON)
+    byteArray = bytearray()
+    firstbyte = 129
+    byteArray.append(firstbyte)
+    if framePayloadLength < 126:
+        byteArray.append(framePayloadLength)
+        byteArray+=messageToSendJSON
+        return byteArray
+    elif framePayloadLength >=126 and framePayloadLength < 65536:
+        byteArray.append(126)
+        newPay = framePayloadLength.to_bytes(2, byteorder="big")
+        byteArray += newPay
+        byteArray += messageToSendJSON
+        return byteArray
+    elif framePayloadLength >= 65536:
+        byteArray.append(127)
+        newPay = framePayloadLength.to_bytes(8, byteorder="big")
+        byteArray += newPay
+        byteArray += messageToSendJSON
+        return byteArray
 
 def sendFrames(escapedCom, username, payLoadLength):
-    # frame = b''
-    # # byteArrayWeb = bytearray()
-    # respondFirstByte = b'100000010'
-    # # respondFirstByteWeb = 127
-    # # maskbit = 0
     
     messageToSendBack = {'messageType':'chatMessage', 'username': username, 'comment':escapedCom}
     messageToSendBackJSON = json.dumps(messageToSendBack).encode()
@@ -556,8 +733,10 @@ def decodeMessage(payloadByteList: list, maskbyteList: list):
     asciiStr = ""
     payIndex = 0 # need to create this variable so it is not tied to the loop index
     for pIndex in range(0,len(payloadByteList), 4): # skipping by 4 will match us with the next set of bytes for the mask!
+        # print("payIndex from inside decoded Message: ", payIndex)
         # at the end of the inner loop payDex will be == 4 so we know we are at the correct next set of 4 bytes
         for mIndex in range(len(maskbyteList)): # mIndex will always be 0,1,2,3 so we guarantee to iterate the mask length
+         #   print(f"payindex: {payIndex}, len(payloadbytelist):{len(payloadByteList)}", flush=True)
             if payIndex == len(payloadByteList):
                 break  # is the payDex accumulator == len of payload we know to stop iterating
             # here we xor the bytes in the small mask that correspond to the payload list
@@ -565,6 +744,8 @@ def decodeMessage(payloadByteList: list, maskbyteList: list):
             payIndex+=1 
             ascii_ch = chr(xor) # convert the xor into its ascii character and add it to the ascii string
             asciiStr += ascii_ch 
+    print("this is the payindex size ",payIndex, flush=True)
+    print("payindex should match the payload length ", len(payloadByteList), flush=True)
     return asciiStr
 
 # this function takes in a string and escapes any html injections
@@ -580,9 +761,9 @@ def createMaskList(frame: bytes, startingMaskIndex: int, endingMaskIndex: int):
     return maskList
 
 # this function takes in a websocket frame, and based on the payload length parses the bytes of the frame into a list
-def createPayLoad(frame: bytes, startingPayLoadIndex: int):
+def createPayLoad(frame: bytes, startingPayLoadIndex: int, payloadLength:int):
     payLoadList = []
-    payload = frame[startingPayLoadIndex:]
+    payload = frame[startingPayLoadIndex:payloadLength+1]
     for bytes in payload:
         payLoadList.append(formatInt2Bin(bytes))
     return payLoadList
@@ -599,9 +780,10 @@ def calculatePayloadLength(frame: bytes, startingPayLoadLengthIndex: int, ending
 def prettyPrint(frame:bytes, payloadLength: int):
     fourBytes = ""
     count = -1
-    for b in frame:
+    while(count <= payloadLength):
         count +=1
        # print(count)
+        
         if count > 0 and count % 4 == 0:
             print(count,fourBytes)
             # clear fourBytes
