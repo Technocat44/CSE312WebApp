@@ -37,7 +37,7 @@ class Router:
     """
 
     def add_route(self, route):
-        print("this is route; ", route)
+       # print("this is route; ", route)
         self.routes.append(route)
        
 

@@ -136,10 +136,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         
         ###############TEMP Solution for Obj 2#############
          # need a placeholder value to enter the while loop, once inside loop, the actual content-length replaces
-        print("[READING BYTES]")
+ #       print("[READING BYTES]")
         # while (len(read_bytes) < contentLen): # should be while I haven't read Content-Length bytes
         MyTCPHandler.counter = MyTCPHandler.counter + 1
-        print("counter: " + str(MyTCPHandler.counter))
+   #     print("counter: " + str(MyTCPHandler.counter))
         received_data = self.request.recv(1024)
         
         clients.append(self.client_address[0])
@@ -147,7 +147,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         start = 0
         # cleaner way to look at the received data
         for s in received_data.split(b'\r\n'):
-            print(f"This is rcvd data line {start}: ", s)
+    #        print(f"This is rcvd data line {start}: ", s)
             start+=1
 
         # so if 
@@ -155,7 +155,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # this one time request should grab the headers and handle all normal request
         # if the request has an image upload with a ton of bytes, we will enter the while loop          
         request = Request(received_data)
-        print(request.headers)
+    #    print(request.headers)
         if (request.headers.get("Content-Length") != None ):
             contentLen = request.headers["Content-Length"]
         # print("this is the content-length >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", contentLen)

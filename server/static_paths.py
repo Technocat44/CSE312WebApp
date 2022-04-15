@@ -59,8 +59,8 @@ def style(request, handler):
     send_file("static/style.css", "text/css; charset=utf-8", request, handler)
 
 def image(request, handler):
-    print("\n\n\n\n\n\n\n")
-    print("image callback initiated, ++++++++++++++++++++++++++++++++++++++")
+#    print("\n\n\n\n\n\n\n")
+ #   print("image callback initiated, ++++++++++++++++++++++++++++++++++++++")
     path_prefix = "/image/"
     # we are looking for the first instance of the /image/ tag in the path,  
     image_name = request.path[request.path.find(path_prefix)+len(path_prefix):]
@@ -78,7 +78,7 @@ def image(request, handler):
     image_name = image_name.replace("/", "")
     find_extension = image_name.find(".")
     extension = image_name[find_extension+1:]
-    print ('this is the extension ', extension)
+ #   print ('this is the extension ', extension)
     if extension in valid_mime_types:
         file_extension = valid_mime_types[extension]
         new_image_name = image_name
@@ -86,7 +86,7 @@ def image(request, handler):
         file_extension = valid_mime_types["default"]
         new_image_name = image_name[:find_extension] + "." + file_extension
 
-    print ("new image name: ", new_image_name)
+ #   print ("new image name: ", new_image_name)
     # checks if the file path is valid before trying to open and read it
     file_exist = exists('static/image/' + new_image_name)
     if file_exist:

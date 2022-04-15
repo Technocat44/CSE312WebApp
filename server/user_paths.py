@@ -36,15 +36,15 @@ def create(request, handler):
 
 # PUT /users/.    works 
 def update(request, handler):
-    print("hey we made it into this function for updating a user cool")
+ #   print("hey we made it into this function for updating a user cool")
     body_string = request.body.decode()
     body_dict = json.loads(body_string)
     email = body_dict["email"]
     username = body_dict["username"]
     userIdSplit = request.path.split("/")
-    print("this is the userId split from request.path = ",userIdSplit)
+ #   print("this is the userId split from request.path = ",userIdSplit)
     userId = userIdSplit[-1]
-    print("This is the userId from userIdSplit[-1], it should return the id numebr, ", userId)
+#    print("This is the userId from userIdSplit[-1], it should return the id numebr, ", userId)
     update = db.updateUser(int(userId), email, username)
     updateToJson = json.dumps(str(update)).encode()
     if update == None:
@@ -56,7 +56,7 @@ def update(request, handler):
 # retrieve a single user
 # GET /users/.   works
 def retrieve(request, handler):
-    print("hey I am in the retrieve function in user_paths")
+ #   print("hey I am in the retrieve function in user_paths")
     userIdSplit = request.path.split("/")
     userId = userIdSplit[-1]
     showSingleUser = db.retrieve_one(int(userId))
