@@ -3,14 +3,65 @@ import secrets
 import os
 import server.database as db
 from server.router import Route
-from server.response import generate_response, redirect
+from server.response import generate_cookie_response, generate_response, redirect
 from server.request import Request, sendBytes, formParser
 #from server.request import formParser
-
+import bcrypt
+from server.auth import check_password_match_and_length
+from server.static_paths import verify_if_visits_cookies_in_headers
+from server.template_engine import render_template
 
 def add_paths(router):
     router.add_route(Route('POST', '/image-upload', parseMultiPart))
+    router.add_route(Route('POST', "/register", parseRegistration))
+    router.add_route(Route('POST', '/login', parseLogin))
 
+def parseLogin(request, handler):
+    print("I am inside of parseLogin")
+    bytesFromForm = sendBytes()
+    formParser(bytesFromForm, 0, request.login, request.headers)
+    print(request.login, "$$$$$$$$$$$$$$$$$$$$$$$$$$$$login dictionary$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+    r = redirect("/")
+    handler.request.sendall(r)
+
+def parseRegistration(request, handler):
+    print("i am inside of parseRegistration")
+    bytesFromFile = sendBytes()
+    formParser(bytesFromFile, 0, request.register, request.headers)
+    print(request.register, '##########################register dictionary#####################################')
+    """
+    1. validate password matches
+    1. generate some salt
+    
+    """
+    """
+        if password_match is -1 password is less than 8 characters try again
+        if password_match is 0 we know they are trying to register but the passwords dont match
+        if password_match is 1 we know they are trying to register and the passwords match!
+    """
+ 
+    # I have to store the registered dictionary in the database otherwise it disappears on a redirect
+    password_match = check_password_match_and_length(request.register[b"password1"], request.register[b"password2"])
+    if password_match == 0 or password_match == -1:
+        """
+        we need to render the homepage from html_paths because the registration dict only exist in this instance, if 
+        we redirect the dictionary disappears.
+        """
+        message = db.list_all_comments()
+        # this is grabbing the number of visits a user visited our page
+        num_visits = verify_if_visits_cookies_in_headers(request)
+        # means it wasn't a matching password
+        # want to render the home page with a passwords do not match warning
+        # render template and generate_cookie_response
+        content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match )
+        res = generate_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
+        handler.request.sendall(res)
+    elif password_match == 1:
+        # means it was a matching password so continue processing
+        pass
+
+    r = redirect("/")
+    handler.request.sendall(r)
 
 def parseMultiPart(request, handler):
     print('\n\n\n\n\n')
@@ -29,7 +80,8 @@ def parseMultiPart(request, handler):
     checker = token_checker(request, handler)
     print("this is what checker returns " , checker)
     if checker == 0:
-        return 
+        r = redirect("/")
+        handler.request.sendall(r)
            
 
     # TODO: Now I have to add these parts from the dictionary to the HTML template 
@@ -94,6 +146,8 @@ def token_checker(request, handler):
     print("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
     print(tokenList)
     tokenCheck = request.parts.get(b"xsrf_token", 0)
+    if tokenCheck == 0:
+        return 0
     for tokenDict in tokenList:
         print("Token dict, ", tokenDict)
         print("token from request , ", tokenCheck.decode())
@@ -103,3 +157,4 @@ def token_checker(request, handler):
     response = generate_response(b"Forbidden. You do not have access. Submission denied.", 'text/plain; charset=utf-8', '403 Forbidden')
     handler.request.sendall(response)
     return 0
+

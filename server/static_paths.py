@@ -6,6 +6,7 @@ import server.database as db
 import json
 from os.path import exists
 import bcrypt
+from server.auth import check_password_match_and_length
 
 """
 This method creates a Route object. A route object has a 
@@ -77,7 +78,16 @@ def home(request, handler):
     # this is grabbing the number of visits a user visited our page
     num_visits = verify_if_visits_cookies_in_headers(request)
 
-    content = render_template("static/index.html",{"loop_data": message}, num_visits )
+    # if the user just registered and sent in their info, password1 will be a key in the dictionary
+
+    """
+        if password_match is -1 password is less than 8 characters try again
+        if password_match is 0 we know they are trying to register but the passwords dont match
+        if password_match is 1 we know they are trying to register and the passwords match!
+    """
+    password_match = 1
+ 
+    content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match )
     res = generate_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
 
         

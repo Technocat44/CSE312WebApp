@@ -19,6 +19,8 @@ class Request:
       #  print("This is sendBytes() >>>>>>>>>" , sendBytes(), '\n' )
         
         self.parts = {}
+        self.register = {}
+        self.login = {}
 
         """
         After the headers are parsed, we need to take care of the multipart boundary. 

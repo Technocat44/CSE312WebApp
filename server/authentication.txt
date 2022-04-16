@@ -118,7 +118,7 @@ Salting:
     Salt is a randomly generated string that is plain text and appended to a password before hashing.
     The salt is appended to the plain text password before hashing.
 
-    WE store the salted hash and salt (as plain text)
+    WE store the salted hash and salt-(as plain text)
 
 
 

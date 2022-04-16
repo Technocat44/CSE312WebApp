@@ -48,6 +48,7 @@ webchat_history = db["chathistory"]
 # if they only send a comment, the imageName will be None
 
 
+
 def store_wehsocket_chat(user, message):
   webchat_history.insert_one({"username": user , "comment": message} )
 

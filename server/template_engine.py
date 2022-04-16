@@ -6,7 +6,7 @@ import secrets
 import server.database as db
 
 
-def render_template(html_filename, data, num_visits):
+def render_template(html_filename, data, num_visits, is_password_valid):
 
     with open(html_filename) as html_file:
         template = html_file.read()
@@ -14,6 +14,7 @@ def render_template(html_filename, data, num_visits):
      #   template = replace_placeholders(template, data)
         
         template = insert_token(secrets.token_urlsafe(15), num_visits)
+        template = invalid_password(template, is_password_valid)
         template = render_loop(template, data)
         
         return template
@@ -169,6 +170,28 @@ def insert_token(token, num_visits):
         #print(template)
         return template
 
+"""
+    if password_match is -1 password is less than 8 characters try again
+    if password_match is 0 we know they are trying to register but the passwords dont match
+    if password_match is 1 we know they are trying to register and the passwords match!
+"""
+def invalid_password(template, is_password_valid):
+    html_password_matching_tag = "{{not matching password}}"
+
+    # if its -1 or 1 we only need to display an empty string, if the passwords match we are going to 
+    # tell the user to login or something
+    if is_password_valid == 1:
+        print("since there either is a password match, or there isn't even a register dictionary we want to replace the take with a blank string")
+        template = template.replace(html_password_matching_tag, "")
+        return template
+    # if the password is not matching, we display the text they need to try again
+    elif is_password_valid == -1:
+        print("the password lengths dont match")
+        template = template.replace(html_password_matching_tag, "Password needs to be longer than 8 characters try again")
+        return template
+    elif is_password_valid == 0:
+        template = template.replace(html_password_matching_tag, "Password do not match try again")
+        return template
 
 
 # if __name__ == '__main__':

@@ -29,3 +29,65 @@ body {
 .user_messages.rightside {
   width: 50%
 }
+
+.form-group {
+  text-align: left;
+  margin: auto;
+  padding: 1px;
+}
+
+/* input.form-group[type="text"]
+*
+* Selects only input type = "text" types with class form-group 
+*
+*/
+input[type="text"].form-control {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type="password"].form-control {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type="email"].form-control {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+#parent {
+  height: fit-content;
+  margin: auto;
+  width: 60%;
+}
+
+.sign-up-button {
+  width: 50%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-sizing: border-box;
+
+  position: relative;
+  text-align: center;
+  color: white;
+  background-color: rgb(28, 197, 22);
+}
