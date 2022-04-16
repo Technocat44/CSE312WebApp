@@ -6,12 +6,13 @@ import secrets
 import server.database as db
 
 
-def render_template(html_filename, data):
+def render_template(html_filename, data, num_visits):
 
     with open(html_filename) as html_file:
         template = html_file.read()
         # call the replace_placeholders with the html file as a string, and that data
      #   template = replace_placeholders(template, data)
+        template = replace_visits_counter(num_visits)
         template = insert_token(secrets.token_urlsafe(15))
         template = render_loop(template, data)
         return template
@@ -163,6 +164,13 @@ def insert_token(token):
         template = template.replace(token_tag, token)
         db.store_xsrf_token(token)
         # print(template)
+        return template
+
+def replace_visits_counter(num_visits):
+    with open("static/index.html") as HTML:
+        template = HTML.read()
+        visit_tag = "{{visits}}"
+        template = template.replace(visit_tag, num_visits)
         return template
 
 # if __name__ == '__main__':

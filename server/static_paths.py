@@ -1,10 +1,11 @@
 
 from server.router import Route
-from server.response import generate_response, redirect
+from server.response import generate_cookie_response, generate_response, redirect
 from server.template_engine import render_template
 import server.database as db
 import json
 from os.path import exists
+import bcrypt
 
 """
 This method creates a Route object. A route object has a 
@@ -36,6 +37,32 @@ def hello(request, handler):
     handler.request.sendall(r)
  
 def home(request, handler):
+    """
+    TODO: Create a cookie
+    Headers:
+    Set-Cookie: (used by server)
+        Use this header in the HTTP response to tell the client to set cookie
+        Syntax: <key>=<value>
+        Example:
+            Set-Cookie: id=Ky73vchyu7d
+            Set-Cookie: visits=4
+        We are telling the client "hey set this cookie so when you make another request I can check it"
+        The browser then saves the cookie on that client's machine and every request after that they set those cookies 
+        in the next request to the server
+        
+
+    Cookie: (used by client)
+        Header used by clients to deliver all cookies that have been set
+        Syntax: <key>=<value>
+            All cookies in one header, with multiple cookies separated by ;
+        Example:
+            Cookie: id=Ky73vchyu7d; visits=4
+    
+    Set the directive for Expired to be longer than an hour
+    
+    """
+ 
+
     print("hey we're home")
     # message = [{"comment": "Whats up", "upload": "", "image_n": "kitten.jpg"},
     #             {"comment": "nothing much", "upload":"", "image_n": "elephant.jpg"},
@@ -46,11 +73,41 @@ def home(request, handler):
     message = db.list_all_comments()
     # creating a simple list for demoing purposes, need to set this up in my database
    # captionList.append({"comment" :request.parts.get(b"comment", b""),"upload" :request.parts.get(b"upload", b"")})
-    content = render_template("static/index.html",{"loop_data": message} )
-    res = generate_response(content.encode(), "text/html; charset=utf-8", "200 OK")
+    
+    # this is grabbing the number of visits a user visited our page
+    num_visits = verify_if_visits_cookies_in_headers(request)
+
+    content = render_template("static/index.html",{"loop_data": message}, num_visits )
+    res = generate_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
+
+        
+    # res = generate_response(content.encode(), "text/html; charset=utf-8", "200 OK")
     handler.request.sendall(res)
    #TODO: set this back once I am done demoing send_file(content.encode(), "text/html; charset=utf-8", request, handler)
   #  send_file("static/index.html", "text/html; charset=utf-8", request, handler)
+
+
+# this function verifies if the Cookie header exist, and if it does it returns the visits cookie value
+def verify_if_visits_cookies_in_headers(request):
+    print("entering the verify cookie function", flush=True)
+    numberOfVisits = 0
+    #TODO: check request.headers for the cookie
+    verify_cookie_in_headers = request.headers.get("Cookie")
+    if verify_cookie_in_headers != -1:
+        cookies = request.headers["Cookie"]
+        cookieList = cookies.split(";") if ";" in cookies else []
+        if len(cookieList) > 0:
+            for cookies in cookieList:
+                if cookies.startswith("visits"):
+                    print("YES the cookie does exist!" ,flush = True)
+                    equalsIndex = cookies.find("=")
+                    numberOfVisits = cookies[equalsIndex:]
+                    numberOfVisits = int(numberOfVisits) + 1
+                    return numberOfVisits
+    # if we never return, we know the cookie doesn't exist yet
+    print("Nope the cookie does not exist", flush=True)
+    numberOfVisits = 1
+    return numberOfVisits
 
 def js(request, handler):
     send_file("static/functions.js", "text/javascript; charset=utf-8", request, handler) 

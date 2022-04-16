@@ -8,6 +8,16 @@ def generate_response(body: bytes, content_type: str = 'text/plain; charset=utf-
     r += body
     return r
 
+def generate_cookie_response(body, content_type, response_code, num_visits):
+    r = b'HTTP/1.1 ' + response_code.encode()
+    r += b'\r\nContent-Length: ' + str(len(body)).encode() 
+    r += b'\r\nContent-Type: ' + content_type.encode()
+    r += b'\r\nSet-Cookie: ' + b'visits=' + f'{num_visits}'.encode() + b'; Max-Age=7200'
+    r += b'\r\nX-Content-Type-Options: nosniff'
+    r += b'\r\n\r\n'
+    r += body
+    return r
+
 def redirect(path: str):
     r = b'HTTP/1.1 301 Moved Permanently'
     r += b'\r\nContent-Length: 0'

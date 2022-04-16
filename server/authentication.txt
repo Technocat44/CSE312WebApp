@@ -1,0 +1,172 @@
+Cookies:
+    HTTP is stateless. Each time a request comes in and server processes it, the server has no memory of what just happened. 
+    We want to client to have state though. Makes things more accessible. 
+    Having some state allows the client to not have to enter their username and password for every request.
+    We want to remember that a client is logged in. We can't just do this with HTTP though.
+
+    How to do this:
+        Idea is, you log in and a random authentication token is set as a cookie.
+        On all subsequent request, the server is going to check that token/cookie, see who the server issued that token to.
+        And then verify, the client must be logged in as this person because they have the token and its unique.
+
+    Get the http request, the request comes with a cookie, we take the cookie and go to the database and verify it. 
+
+    We tell the client to set a cookie in the header of our response, and the client sends that cookie in a header on all 
+    subsequent request.
+
+Headers:
+    Set-Cookie: (used by server)
+        Use this header in the HTTP response to tell the client to set cookie
+        Syntax: <key>=<value>
+        Example:
+            Set-Cookie: id=Ky73vchyu7d
+            Set-Cookie: visits=4
+        We are telling the client "hey set this cookie so when you make another request I can check it"
+        The browser then saves the cookie on that client's machine and every request after that they set those cookies 
+        in the next request to the server
+        
+
+    Cookie: (used by client)
+        Header used by clients to deliver all cookies that have been set
+        Syntax: <key>=<value>
+            All cookies in one header, with multiple cookies separated by ;
+        Example:
+            Cookie: id=Ky73vchyu7d; visits=4
+
+    IMPORTANT! 
+        Only one cookie can be set using Set-Cookie
+        If you want to set multiple cookies, send multiple Set-Cookie headers
+        So yes I can send duplicate headers with the same name
+
+    Directives:
+        Allow us to provide more information about a cookie
+        Example:
+            Expires:
+                The exact time when the cookie should be deleted
+                                            <day-name>, <day> <month> <year> <hour>:<minute>:<second> GMT
+                Set-Cookie: id=X6kAwpgW29M; Expires=Wed, 7 Apr 2021 14:42:00 GMT
+            Max-Age:
+                Set the number of second before the cookie expires
+                Set-Cookie: id=X6kAwpgW29M; Max-Age=3600
+                    This cookie expires 1 hour after it is set
+        If neither Expires nor Max-Age are set:
+            The cookie will be deleted when the user ends the session
+               ie. The cookie is deleted when the browser is closed
+                [Browser]. Not tab
+
+    Secure: 
+        If this directive is set, the cookies will only appear if the connection is HTTPS
+        DONT do this for the HW. The cookies wont appear
+
+    HttpOnly:
+        Means you can't read or change this cookie with JavaScript (security purpose)
+        If someone gets JS in the client somehow, this will deny the JS from reading the cookies
+        Example:
+            Set-Cookie: id=J8jbb82nd87; HttpOnly
+
+Clients can change there own cookies, so it is crucial to validate each cookie/token with the server and database. 
+
+[[[To see all cookies in the browser, inspect elements and go to the Application tab]]]
+
+
+Authentication:
+    For many features of a web app we want to remember a user across multiple visits and verify there identity
+
+    Registration form:
+        send a username and password
+
+    Authenticate:
+        Verify a user is a registered account holder by providing their username and password
+        Log them into the app
+        Serve content specific to them
+
+    On the server:
+        Store each username/password in a database
+        This data must persist so users can log in
+
+        How to store passwords safely?
+        NEVER STORE PASSWORDS AS PLAINTEXT
+
+        (((We do this by HASHING the passwords and only storing the hashes)))
+
+    Hash functions: a function that converts one value into another with certain properties
+    A Hash functions may not add any security, but a cryptographic hash function does!
+
+    A cryptographic hash function is made to be a one way function. (((It takes an input and generates an output, but
+    you cannot take the output and generate the input)))
+
+    When given a password, and computing a hash, only the hash is stored in the database, so to verify a password,
+    the user must type in their password, it gets hashed and we compare it to the database hash and if they match 
+    the person is verified. 
+
+Hackers:
+    Only hashing is not totally secure, a hacker can try and guess the hash with every possible password. If the hashes match
+    we got the password.
+
+Entropy:
+    The total number of guesses you have to make to guarantee a match is found.
+    Examples:
+        • If you know the plain text is a single lowercase letter the entropy is 26
+        • If it’s two lowercase letters, the entropy is 26^2 = 676
+        • If it’s two letters that can be upper or lower case, 52^2 = 2704
+        • Tend to measure the “bits of entropy”
+        • The log base 2 of these values
+        • Typically consider >=80 bits of entropy to be secure
+
+Salting:
+    We salt hashes to prevent hackers attacks
+    Salt is a randomly generated string that is plain text and appended to a password before hashing.
+    The salt is appended to the plain text password before hashing.
+
+    WE store the salted hash and salt (as plain text)
+
+
+
+Authentication Tokens:
+     Registration
+TODO:   • User sends username and password
+        • Validate password strength
+        • Randomly generate salt, appended to password
+        • Hash the salted password
+TODO: [(([Store salted hash password in database and the salt (which is a random generated string in plain text) in db]))]
+    • Authentication
+        • User sends username/password
+        • Retrieve the stored salted hash
+        • Salt and hash the provided password
+        • If both salted hashes are identical, the user is authenticated
+
+    Need to avoid asking for username/password on every request
+     TODO: • (([[(When a user is authenticated, generate a random token
+            By authenticated meaning, the client is logging in, we go to the database, pull the username, pull the salt
+            append the salt to the password, hash it, pull the salted hash password and check if they match, and everything
+            looks good.)[[))]]
+        To log a user in, we generate a random token 
+            • The token should have enough entropy that is cannot be guessed
+            • Generally, there should be at least 2^80 unique tokens that could be generated
+    TODO: Assign the token to the user, their authentication token.
+            • Associate this token with the user == Hash it and store this token in the database.
+
+    TODO:     ((([[Once we generate the token, hash it and store it in the database we set it as a cookie.
+                   with the HttpOnly directive. 
+        Now the token will be sent will all subsequent request.
+        Use the token to validate the user]])))
+
+    TODO:  ((([[whenever we get a request from anyone, we are going to check if the authentication-cookie exist. Then look
+        up in the database (database query), if its a valid token (we find a match) find out who the token 
+        is associated with and then we have the username.]])))
+
+    These tokens do need to be stored on the database. These tokens are as sensitve as password.
+
+    We need to hash the token before we store it in the database.
+
+    TODO: Use bcrypt to do the hashing and the salting of passwords and tokens.
+
+    Check each request for a cookie with a token
+        • Lookup the hash of the token in the database
+        • If the token is found, read the associated username
+        • Proceed as though this request was made by that user
+    • If the token is invalid or no cookie is set
+        • Redirect to the login page
+    • Ensure all sensitive pages/features are secured this way!
+        • Remember, the front end cannot be trusted
+        • A user can manually make any request
