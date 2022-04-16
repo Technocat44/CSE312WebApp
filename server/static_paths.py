@@ -92,18 +92,26 @@ def verify_if_visits_cookies_in_headers(request):
     print("entering the verify cookie function", flush=True)
     numberOfVisits = 0
     #TODO: check request.headers for the cookie
-    verify_cookie_in_headers = request.headers.get("Cookie")
+    verify_cookie_in_headers = request.headers.get("Cookie", -1)
+    print("the value of calling get on the headers dictionary : ",verify_cookie_in_headers)
     if verify_cookie_in_headers != -1:
         cookies = request.headers["Cookie"]
-        cookieList = cookies.split(";") if ";" in cookies else []
-        if len(cookieList) > 0:
+        print("this should be the cookie value from the headers dict : ", cookies)
+        if ";" in cookies:
+            cookieList = cookies.split(";")
             for cookies in cookieList:
                 if cookies.startswith("visits"):
-                    print("YES the cookie does exist!" ,flush = True)
+                    print("YES the cookie does contain a ;" ,flush = True)
                     equalsIndex = cookies.find("=")
                     numberOfVisits = cookies[equalsIndex:]
                     numberOfVisits = int(numberOfVisits) + 1
                     return numberOfVisits
+        elif ";" not in cookies:
+            print("yes we have a cookie, here it is: " , cookies)
+            equalsIndex = cookies.find("=")
+            numberOfVisits = cookies[equalsIndex + len("="):]
+            numberOfVisits = int(numberOfVisits) + 1
+            return numberOfVisits            
     # if we never return, we know the cookie doesn't exist yet
     print("Nope the cookie does not exist", flush=True)
     numberOfVisits = 1

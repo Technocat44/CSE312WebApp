@@ -12,9 +12,10 @@ def render_template(html_filename, data, num_visits):
         template = html_file.read()
         # call the replace_placeholders with the html file as a string, and that data
      #   template = replace_placeholders(template, data)
-        template = replace_visits_counter(num_visits)
-        template = insert_token(secrets.token_urlsafe(15))
+        
+        template = insert_token(secrets.token_urlsafe(15), num_visits)
         template = render_loop(template, data)
+        
         return template
 
 
@@ -157,27 +158,28 @@ def render_loop(template, data):
         return final_content
 
     
-def insert_token(token):
+def insert_token(token, num_visits):
     with open("static/index.html") as html:
         template = html.read()
         token_tag = "{{token_val}}"
-        template = template.replace(token_tag, token)
+        visit_tag = "{{visits}}"
+        template = template.replace(token_tag, token).replace(visit_tag, str(num_visits))
+    #    template = template.replace(visit_tag, str(num_visits))
         db.store_xsrf_token(token)
-        # print(template)
+        #print(template)
         return template
 
-def replace_visits_counter(num_visits):
-    with open("static/index.html") as HTML:
-        template = HTML.read()
-        visit_tag = "{{visits}}"
-        template = template.replace(visit_tag, num_visits)
-        return template
+
 
 # if __name__ == '__main__':
     
 #     sampleDictList = [{"comment": "this is a 1 comment", "imageName" : "acoolpickrkfkdfk.jpg"}, {"comment": "this 2 is a comment"}]
 #     message = { "loop_data": sampleDictList} 
-#     con = render_template("static/index.html", message)
+#     num_visits = 10
+#     import os
+#     print("current directory>>>>>>>>>>>>>>>>",os.getcwd())
+
+#     con = render_template(file, message, num_visits)
 #     print('\n\n\n\n\n\n\n')
 #     print(con)
 
