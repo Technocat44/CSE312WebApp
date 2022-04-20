@@ -1,7 +1,9 @@
 
+from gettext import find
 from server.router import Route
-from server.response import generate_cookie_response, generate_response, redirect
+from server.response import generate_auth_token_cookie_response, generate_visit_cookie_response, generate_response, redirect
 from server.template_engine import render_template
+from server.auth import find_auth_token_in_collection
 import server.database as db
 import json
 from os.path import exists
@@ -77,6 +79,10 @@ def home(request, handler):
     
     # this is grabbing the number of visits a user visited our page
     num_visits = verify_if_visits_cookies_in_headers(request)
+    signInCookieUserName =  verify_if_signin_cookie_exist(request) # have this return the username
+    
+
+
 
     # if the user just registered and sent in their info, password1 will be a key in the dictionary
 
@@ -86,11 +92,11 @@ def home(request, handler):
         if password_match is 1 we know they are trying to register and the passwords match!
     """
     password_match = 1
+    
+    content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, signInCookieUserName)
+    res = generate_visit_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
  
-    content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match )
-    res = generate_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
-
-        
+    
     # res = generate_response(content.encode(), "text/html; charset=utf-8", "200 OK")
     handler.request.sendall(res)
    #TODO: set this back once I am done demoing send_file(content.encode(), "text/html; charset=utf-8", request, handler)
@@ -98,7 +104,7 @@ def home(request, handler):
 
 
 # this function verifies if the Cookie header exist, and if it does it returns the visits cookie value
-def verify_if_visits_cookies_in_headers(request):
+def verify_if_visits_cookies_in_headers(request) -> int:
     print("entering the verify cookie function", flush=True)
     numberOfVisits = 0
     #TODO: check request.headers for the cookie
@@ -109,11 +115,15 @@ def verify_if_visits_cookies_in_headers(request):
         print("this should be the cookie value from the headers dict : ", cookies)
         if ";" in cookies:
             cookieList = cookies.split(";")
+            
+            print("cookieList in verify visits cookie:  ", cookieList)
             for cookies in cookieList:
+                cookies = cookies.strip()
                 if cookies.startswith("visits"):
                     print("YES the cookie does contain a ;" ,flush = True)
                     equalsIndex = cookies.find("=")
-                    numberOfVisits = cookies[equalsIndex:]
+                    numberOfVisits = cookies[equalsIndex + len("="):]
+                    print("number of visits: ",numberOfVisits, flush=True)
                     numberOfVisits = int(numberOfVisits) + 1
                     return numberOfVisits
         elif ";" not in cookies:
@@ -127,6 +137,39 @@ def verify_if_visits_cookies_in_headers(request):
     numberOfVisits = 1
     return numberOfVisits
 
+# this function verifies if the auth_token exist and if it does, we verify the token is valid,
+#  then we return the name of the user
+def verify_if_signin_cookie_exist(request):
+    print("we are entering the verify_if_signin_cookie_exist")
+    verify_if_cookie_header_exist = request.headers.get("Cookie", -1)
+    if verify_if_cookie_header_exist != -1:
+        cookies = request.headers["Cookie"]
+        if ";" in cookies:
+            cookieList = cookies.split(";")
+            print("cookieList in verify sign in cookie : ", cookieList)
+            for cookies in cookieList:
+                cookies = cookies.strip()
+                if cookies.startswith("auth_token"):
+                    equalsIndex = cookies.find("=")
+                    auth_token = cookies[equalsIndex + len("="):]
+                    # need to verify if the auth_token matches 
+                    print("this is the auth_token parsed from the headers: ", auth_token, flush=True)
+                    user_or_none = find_auth_token_in_collection(auth_token)
+                    print("user name after validating the auth token in db", user_or_none, flush=True)
+                    if user_or_none != None:
+                        # we have a valid auth token! 
+                        print("we have a valid user, ", user_or_none, flush=True)
+                        return user_or_none
+                    else:
+                        # the auth_token does not match someone is trying to hack!
+                        print("the auth_token does not match someone is trying to hack!")
+                        return None
+        else:
+            # if there is not ; in the cookies, we know there is not auth_token as there has to be a visits cookie set 
+            return None
+
+
+    
 def js(request, handler):
     send_file("static/functions.js", "text/javascript; charset=utf-8", request, handler) 
 

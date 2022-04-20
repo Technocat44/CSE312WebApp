@@ -3,11 +3,12 @@ import secrets
 import os
 import server.database as db
 from server.router import Route
-from server.response import generate_cookie_response, generate_response, redirect
+from server.response import generate_visit_cookie_response, generate_response, redirect, generate_auth_token_cookie_response
 from server.request import Request, sendBytes, formParser
 #from server.request import formParser
 import bcrypt
-from server.auth import check_password_match_and_length
+from server.auth import check_password_match_and_length, generateSalt, generate_new_hashed_password_with_salt, store_auth_token_auth,\
+store_user_and_password, find_user_in_collection, generate_auth_token, generate_hash_for_auth_token
 from server.static_paths import verify_if_visits_cookies_in_headers
 from server.template_engine import render_template
 
@@ -21,6 +22,57 @@ def parseLogin(request, handler):
     bytesFromForm = sendBytes()
     formParser(bytesFromForm, 0, request.login, request.headers)
     print(request.login, "$$$$$$$$$$$$$$$$$$$$$$$$$$$$login dictionary$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+
+    usernameLogin = request.login[b"userName"]
+    passwordLogin = request.login[b"password"]
+    # find username in database
+    user = find_user_in_collection(usernameLogin)
+    print("type of the mongo db user ", type(user), "this is the user: ", user)
+    if user:
+        # user doesn't exist
+        print("user does exist")
+        # take the userDict and parse out the salt, and hashedpassoword
+        # salt the login password and if it matches the hashed password they verified who they are!
+        saltFromDb = user["salt"]
+        print("this is the salt from the database: ", saltFromDb)
+        print("the type of the password from login ")
+        verifyHashedSaltPassword = generate_new_hashed_password_with_salt(saltFromDb, passwordLogin)
+        print("thi sis the verify hashed salted password: ", verifyHashedSaltPassword)
+        if verifyHashedSaltPassword == user["password"]:
+            # this is the correct person!
+            print("yes the registered user logged in correctly!!!!!!!!!")
+            # now create an authentication token
+            auth_token = generate_auth_token()
+            print("this is the auth_token generated: ", auth_token, type(auth_token))
+            # store auth_token in db as a hash, use auth_token as a cookie.
+            hashed_auth_token = generate_hash_for_auth_token(auth_token)
+            print("this is the hash_auth_token: ", hashed_auth_token, type(hashed_auth_token))
+            """
+            I hashed the authtoken and sent it to the database with the username
+            When a user has an auth_token cookie, I will throw it at the generate_hash_for_auth_token
+            and verify that the tokens match, if they do, I will grab the username and set it to the html template
+            """
+            store_auth_token_auth(hashed_auth_token.encode(), usernameLogin)
+            # set the auth_token cookie:
+
+            password_match = 1
+            message = db.list_all_comments()
+            # this is grabbing the number of visits a user visited our page
+            num_visits = verify_if_visits_cookies_in_headers(request)
+            # means it wasn't a matching password
+            # want to render the home page with a passwords do not match warning
+            # render template and generate_cookie_response
+            content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, usernameLogin)
+            res = generate_auth_token_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits, auth_token)
+            handler.request.sendall(res)
+        else:
+            re = redirect("/")
+            handler.request.sendall(re)
+    elif user != None:
+        re = redirect("/")
+        handler.request.sendall(re)
+
+            
     r = redirect("/")
     handler.request.sendall(r)
 
@@ -34,18 +86,21 @@ def parseRegistration(request, handler):
     1. generate some salt
     
     """
+
     """
         if password_match is -1 password is less than 8 characters try again
         if password_match is 0 we know they are trying to register but the passwords dont match
         if password_match is 1 we know they are trying to register and the passwords match!
     """
- 
-    # I have to store the registered dictionary in the database otherwise it disappears on a redirect
     password_match = check_password_match_and_length(request.register[b"password1"], request.register[b"password2"])
     if password_match == 0 or password_match == -1:
         """
-        we need to render the homepage from html_paths because the registration dict only exist in this instance, if 
+        we need to render the homepage from html_paths!!!! because the registration dict only exist in this instance, if 
         we redirect the dictionary disappears.
+        If the sign-up username and password has any errors we do not store anything in the database
+
+        We render the homepage again but with a message letting the user know what they need to change 
+
         """
         message = db.list_all_comments()
         # this is grabbing the number of visits a user visited our page
@@ -53,15 +108,30 @@ def parseRegistration(request, handler):
         # means it wasn't a matching password
         # want to render the home page with a passwords do not match warning
         # render template and generate_cookie_response
-        content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match )
-        res = generate_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
+        content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, username=None )
+        res = generate_visit_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
         handler.request.sendall(res)
     elif password_match == 1:
-        # means it was a matching password so continue processing
-        pass
+        # means it was a matching password so continue processing, we are going to hash and salt the password and store 
+        # the username with the hashed password and the salt in the db.
+        """
+        Go to auth.py file to create these hashes and salt
+        1. generate some salt from bcrypt
+        2. hash the password 
+        • Randomly generate salt, appended to password
+        • Hash the salted password
+        """
+        
+        salt = generateSalt()
+        print("this is the random salt: ", salt)
+        hashedSaltedPassword = generate_new_hashed_password_with_salt(salt, request.register[b"password1"])
+        print("this is the hashed salted password: ", hashedSaltedPassword)
+        store_user_and_password(hashedSaltedPassword, request.register[b"userName"], salt)
+        signedUp = 2
+        # I could create a signup cookie that saves the state that the user signed up. it would only happen in this func
 
-    r = redirect("/")
-    handler.request.sendall(r)
+        r = redirect("/")
+        handler.request.sendall(r)
 
 def parseMultiPart(request, handler):
     print('\n\n\n\n\n')

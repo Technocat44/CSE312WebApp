@@ -41,13 +41,34 @@ users_id_collection = db["users_id"] # one collection for users ids
 comment_and_image_name_from_html_collection = db["comment_image_name"] # a collection for uploaded comments and image names
 xsrf_collection = db["tokens"] # a collection of xsrf token's created on homepage load
 webchat_history = db["chathistory"]
+user_password_collection = db["pass"]
+auth_token_collection = db["auth_tokens"]
+
 
 #print(mongo_client.list_database_names())
 #chat_collection.insert()
 # we can store a comment and image name that a user sent as a request.
 # if they only send a comment, the imageName will be None
 
+def store_auth_token(auth_token, username):
+  # if might be beneficial to also store the username with the auth_token
+  print("This is the username we are storing with the auth_token", username, type(auth_token))
+  print("this is the auth_token we are storing, ", auth_token, type(auth_token))
+  auth_token_collection.insert_one({"auth_token":auth_token, "username": username})
 
+def retrieve_auth_token(auth_token):
+  print("this is the auth_token from the database.py file : ", auth_token , type(auth_token) ,flush=True)
+  auth_token_dict = auth_token_collection.find_one({"auth_token":auth_token.encode()})
+  print("this is the auth_token_dict in database.py ", auth_token_dict, type(auth_token_dict))
+  return auth_token_dict
+
+def find_username_in_password_collection(username: bytes):
+  user = user_password_collection.find_one({"username": username})
+  print("this is the user we found: ", user)
+  return user
+
+def store_passwords(hashSaltedPassword: bytes, username: bytes, salt: bytes):
+  user_password_collection.insert_one({"username": username, "password": hashSaltedPassword, "salt": salt})
 
 def store_wehsocket_chat(user, message):
   webchat_history.insert_one({"username": user , "comment": message} )

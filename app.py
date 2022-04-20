@@ -147,7 +147,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         start = 0
         # cleaner way to look at the received data
         for s in received_data.split(b'\r\n'):
-    #        print(f"This is rcvd data line {start}: ", s)
+            print(f"This is rcvd data line {start}: ", s)
             start+=1
 
         # so if 

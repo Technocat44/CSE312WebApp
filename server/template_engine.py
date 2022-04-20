@@ -6,7 +6,7 @@ import secrets
 import server.database as db
 
 
-def render_template(html_filename, data, num_visits, is_password_valid):
+def render_template(html_filename, data, num_visits, is_password_valid, username):
 
     with open(html_filename) as html_file:
         template = html_file.read()
@@ -15,6 +15,7 @@ def render_template(html_filename, data, num_visits, is_password_valid):
         
         template = insert_token(secrets.token_urlsafe(15), num_visits)
         template = invalid_password(template, is_password_valid)
+        template = render_username_if_authenticated(template, username)
         template = render_loop(template, data)
         
         return template
@@ -181,7 +182,7 @@ def invalid_password(template, is_password_valid):
     # if its -1 or 1 we only need to display an empty string, if the passwords match we are going to 
     # tell the user to login or something
     if is_password_valid == 1:
-        print("since there either is a password match, or there isn't even a register dictionary we want to replace the take with a blank string")
+        print("since there either is a password match, or there isn't even a register dictionary we want to  with a blank string")
         template = template.replace(html_password_matching_tag, "")
         return template
     # if the password is not matching, we display the text they need to try again
@@ -192,7 +193,17 @@ def invalid_password(template, is_password_valid):
     elif is_password_valid == 0:
         template = template.replace(html_password_matching_tag, "Password do not match try again")
         return template
-
+    
+def render_username_if_authenticated(template, username):
+    # we want to render the template with the Welcome username displayed
+    welcomeuser = "{{welcome user}}"
+    if username == None:
+        print("there is not username so there is no valid auth token")
+        template = template.replace(welcomeuser, "")
+        return template
+    else:
+        template = template.replace(welcomeuser, f"Welcome back {username.decode()}")
+        return template
 
 # if __name__ == '__main__':
     
