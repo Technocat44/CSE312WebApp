@@ -1,5 +1,10 @@
 version: "3.3"
 services:
+  nginx:
+    build: ./nginx
+    ports:
+      - '80:80'
+      - '443:443'
   mongo:
     image: mongo:latest
   app:
@@ -7,8 +12,8 @@ services:
     restart: always
     environment:
       WAIT_HOST: mongo:27017
-    ports:
-      - "8080:8080"
+   # ports:
+   #   - "8080:8080"
   
 
   # debug:

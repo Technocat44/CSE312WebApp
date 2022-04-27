@@ -10,7 +10,7 @@ RUN pip3 install bcrypt
 
 COPY . .
 
-EXPOSE 8080
+EXPOSE 8000
 # ###########################################################
 # FROM base as debug 
 # RUN pip install ptvsd
