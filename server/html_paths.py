@@ -11,8 +11,14 @@ from server.auth import check_password_match_and_length, generateSalt, generate_
 store_user_and_password, find_user_in_collection, generate_auth_token, generate_hash_for_auth_token
 from server.static_paths import verify_if_visits_cookies_in_headers, verify_if_signin_cookie_exist
 from server.template_engine import render_template
-from server.static_paths import logged_in_auth_tokens
+# from server.static_paths import logged_in_auth_tokens
 
+
+# I should store a dictionary with keys of the client address and the values as the username and to compute the
+# username I could create a collection in the database that stores the username and auth token .
+#   So I retrieve the username via the authtoken and then I use that username if it matches the current client address...
+#
+#
 def add_paths(router):
     router.add_route(Route('POST', '/image-upload', parseMultiPart))
     router.add_route(Route('POST', "/register", parseRegistration))
@@ -60,14 +66,17 @@ def parseLogin(request, handler):
             message = db.list_all_comments()
             # this is grabbing the number of visits a user visited our page
             num_visits = verify_if_visits_cookies_in_headers(request)
-            userFromVerifyCookie = verify_if_signin_cookie_exist(request)
+            # logged_in_auth_tokens["auth_token"] = auth_token
+            # logged_in_auth_tokens["user"] = usernameLogin
+
           
             # means it wasn't a matching password
             # want to render the home page with a passwords do not match warning
             # render template and generate_cookie_response
             content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, usernameLogin)
-            res = generate_auth_token_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits, auth_token)
+            res = generate_auth_token_cookie_response(content.encode(), "text/html; charset=utf-8", "301 Moved Permanently", num_visits, auth_token, "/")
             handler.request.sendall(res)
+            re = redirect("/")
         else:
             re = redirect("/")
             handler.request.sendall(re)

@@ -1,0 +1,86 @@
+
+<html>
+  <head>
+    <title>CSE312 Sample Front End</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+  </head>
+<body>
+<form 
+    action="/login"
+    id="register-form"
+    method="POST"
+    enctype="multipart/form-data"
+    >
+    <div id="parent">
+      <h1>Login here</h1>
+      <div class="form-group">
+        <label for="userName">User Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="userName"
+          name="userName"
+          placeholder="Enter user name"   
+        />
+      </div>
+      <div class="form-group">
+        <label for="password1">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="password"
+          name="password"
+          placeholder="Password must be 8 characters or more"
+        />
+      </div>
+      <button class="sign-up-button" type="submit">Login</button>
+    </div>
+  </form>
+
+
+  <form 
+    action="/register"
+    id="register-form"
+    method="POST"
+    enctype="multipart/form-data"
+    >
+    <div id="parent">
+      <h1>Sign up here!</h1>
+      <div class="form-group">
+        <label for="userName">Create a User Name</label>
+        <input
+          type="text"
+          class="form-control"
+          id="userName"
+          name="userName"
+          placeholder="Enter user name"   
+        />
+      </div>
+      <div class="form-group">
+        <label for="password1">Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="password1"
+          name="password1"
+          placeholder="Password must be 8 characters or more"
+        />
+      </div>
+      <div class="form-group">
+        <label for="password2">Confirm Password</label>
+        <input
+          type="password"
+          class="form-control"
+          id="password2"
+          name="password2"
+          placeholder="Confirm password"
+        />
+      </div>
+
+      <button class="sign-up-button" type="submit">Submit</button>
+    </div>
+  </form>
+    <p>
+        
+</body>
+</html>

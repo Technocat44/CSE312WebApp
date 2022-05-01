@@ -1,10 +1,10 @@
 import re
 
-from server.response import generate_response
+from server.response import generate_response, redirect
 from server.router import Route
 from server.request import Request
 import server.database as db
-from server.static_paths import logged_in_auth_tokens
+# from server.static_paths import logged_in_auth_tokens
 import sys
 import hashlib
 import base64
@@ -12,6 +12,9 @@ import random
 import os
 import json
 import sys
+import time
+
+from server.static_paths import verify_if_signin_cookie_exist, js_auth_token_intercept_dict
 
 """
 --
@@ -236,6 +239,11 @@ Video from 3/28 -- 13:00 minutes:
 def handshake(request, handler):
     sys.path.append("..")
     from app import MyTCPHandler
+
+    """
+    We should intercept the handshake first to get the username and auth_token
+    
+    """
     """
     we import the MyTCPHandler only when this function is called to avoid cicular dependecy issues
     """
@@ -243,30 +251,54 @@ def handshake(request, handler):
     res = generate_websocket_response(b"","text/plain; charset=utf-8",'101 Switching Protocols', request)
    # print("this is response for websocket >>>>>>>>>>>>>>>>>>>>: ", res)
     handler.request.sendall(res)
+    # then immediately send another response to get the cookies
 
    #  username = "User" + str(random.randint(0,1000))
-    print("in websockets, this is the logged in users auth tokens", logged_in_auth_tokens)
-    if logged_in_auth_tokens == {}:
-        handler.request.sendall(generate_response(b"", 'text/plain;charset=utf-8','200 Ok'))
-        return
+   # print("in websockets, this is the logged in users auth tokens", logged_in_auth_tokens)
+
+    ### I am adding this check first because on the handshake there is not cookie header, this way I wont clog up the socket
+
+    # if logged_in_auth_tokens == {}:
+    #     handler.request.sendall(generate_response(b"", 'text/plain;charset=utf-8','200 Ok'))
+    #     return
     ### this is a collection object not the user    
-    user_from_auth_token_from_cookies = db.get_user_via_auth_token(logged_in_auth_tokens["auth_token"])
-    print("this is the user collection from the auth token collection", user_from_auth_token_from_cookies)
-    user_from_auth_token_from_cookies = user_from_auth_token_from_cookies["username"].decode()
-    print("this is the username from the auth token cookies", user_from_auth_token_from_cookies)
-    print("inside websockets , these are the headers: ", request.headers)
-    if user_from_auth_token_from_cookies == None:
-        print("the user form the auth cookie return none!@@@@@@@@@@@@@OOOOOOOOOOOOOOOOOO")
-        handler.request.sendall(generate_response(b"", 'text/plain;charset=utf-8','200 Ok'))
-        return 
+    usernameFromVerifyCookie = js_auth_token_intercept_dict["username"].decode()
+   # clientName=js_auth_token_intercept_dict["client"].decode()
+    # user_from_auth_token_from_cookies = db.get_user_via_auth_token(logged_in_auth_tokens["auth_token"])
+    # print("this is the user collection from the auth token collection", user_from_auth_token_from_cookies)
+    # user_from_auth_token_from_cookies = user_from_auth_token_from_cookies["username"].decode()
+    # print("this is the username from the auth token cookies", user_from_auth_token_from_cookies)
+    # print("inside websockets , these are the headers: ", request.headers)
+    # if user_from_auth_token_from_cookies == None:
+    #     print("the user form the auth cookie return none!@@@@@@@@@@@@@OOOOOOOOOOOOOOOOOO")
+    #     handler.request.sendall(generate_response(b"", 'text/plain;charset=utf-8','200 Ok'))
+    #     return 
     #TODO: retrieve auth_token from headers
-    MyTCPHandler.websocket_connections.append({'username': user_from_auth_token_from_cookies, 'websocket': handler})
-    websocketString = b''
+    # TODO: I am adding the user name to the websocket_connections....maybe I can use the username from there....
+    print("this is username from verify cookie >>>>", usernameFromVerifyCookie)
+    # dictsCount = 0
+    # for dicts in MyTCPHandler.websocket_connections:
+    #     if dicts["username"] == usernameFromVerifyCookie:
+    #         break
+    #     dictsCount += 1
+
+    # if dictsCount == len(MyTCPHandler.websocket_connections):
+    #     # that means we didn'tfind a match and ending the loop early
+    #     # don't add a new dict for the same user
+    MyTCPHandler.websocket_connections.append({'username': usernameFromVerifyCookie, 'websocket': handler}) 
    
     while True:
     # write code to 
-      #  print("[[INITIATING WEBSOCKET]]",flush =True)
+
+        # print("[[INITIATING WEBSOCKET]]",flush =True)
+        # print("[[websocketconnections]]", MyTCPHandler.websocket_connections, flush=True)
+        
+        ## This should skip the webframe if a user is not authenticated
+ 
         websock_frame = handler.request.recv(1024)
+        # 
+        if not websock_frame:
+            continue
         #TODO: Change this to be the len(readbytes
         # )
         """
@@ -276,10 +308,10 @@ def handshake(request, handler):
      #   print("this is the size of the INITIAL read bytes : ", readbytes, flush=True)
         #readbytes = 1024
         opcodeMask = 15
-        try:
-            byteOne = websock_frame[0]
-        except:
-            byteOne = 129
+        # try:
+        byteOne = websock_frame[0]
+        # except:
+        #     byteOne = 129
         opcode = byteOne & opcodeMask
         if opcode == 8:
        #     print("yeah the opcode is 8")
@@ -288,10 +320,14 @@ def handshake(request, handler):
             respondFirstByteWeb = 136
             byteArrayClose.append(respondFirstByteWeb)
             handler.request.sendall(byteArrayClose)
+            # user_from_auth_token_from_cookies = db.get_user_via_auth_token(logged_in_auth_tokens["auth_token"])
+            # print("this is the user collection from the auth token collection", user_from_auth_token_from_cookies)
+            # user_from_auth_token_from_cookies = user_from_auth_token_from_cookies["username"].decode() 
             for dict in MyTCPHandler.websocket_connections:
        #         print("this is a dict in the websocket_connection list :", dict, flush =True)
         #        print(f"is username:{username} in ws_dict:{dict} ? ", username in dict , flush=True)
-                if user_from_auth_token_from_cookies in dict.values():
+             
+                if usernameFromVerifyCookie in dict.values():
          #           print("yes the username is in the dictionary!", flush=True)
                     MyTCPHandler.websocket_connections.remove(dict)
                     break
@@ -338,10 +374,14 @@ def handshake(request, handler):
             # print("this is the comment: ", comment)
                 # need to escape the html of the comment
                 escapedComment = escape_html(comment)
-                db.store_wehsocket_chat(user_from_auth_token_from_cookies, escapedComment)
+                
+                db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
 
             #  print("this is the escaped comment: ", escapedComment)
-                frameToSend = sendFrames(escapedComment, user_from_auth_token_from_cookies, the_real_payload_length)
+                # user_from_auth_token_from_cookies = db.get_user_via_auth_token(logged_in_auth_tokens["auth_token"])
+                # print("this is the user collection from the auth token collection", user_from_auth_token_from_cookies)
+                # user_from_auth_token_from_cookies = user_from_auth_token_from_cookies["username"].decode()
+                frameToSend = sendFrames(escapedComment, usernameFromVerifyCookie, the_real_payload_length)
         #        print("the frame we are sending back >>>> ", frameToSend, flush=True)
                 for connections in MyTCPHandler.websocket_connections:
                 
@@ -369,7 +409,7 @@ def handshake(request, handler):
                 for hand in MyTCPHandler.websocket_connections:
           #          print("this is the dict : ", hand,flush=True)
                     # if the username doesn't match we know this is the other user we are trying to connect to
-                    if user_from_auth_token_from_cookies != hand["username"]:
+                    if usernameFromVerifyCookie != hand["username"]:
                         # print("current username", username, flush=True)
                         # print("opposite username", hand["username"], flush=True)
                     # we want to find the handler that isn't the current and send it to the other
@@ -387,7 +427,7 @@ def handshake(request, handler):
                 for hand in MyTCPHandler.websocket_connections:
                     # print("this is the dict : ", hand,flush=True)
                     # if the username doesn't match we know this is the other user we are trying to connect to
-                    if user_from_auth_token_from_cookies != hand["username"]:
+                    if usernameFromVerifyCookie != hand["username"]:
                         # print("current username", username, flush=True)
                         # print("opposite username", hand["username"], flush=True)
                     # we want to find the handler that isn't the current and send it to the other
@@ -405,7 +445,7 @@ def handshake(request, handler):
                 for hand in MyTCPHandler.websocket_connections:
                     # print("this is the dict : ", hand,flush=True)
                     # if the username doesn't match we know this is the other user we are trying to connect to
-                    if user_from_auth_token_from_cookies != hand["username"]:
+                    if usernameFromVerifyCookie != hand["username"]:
                         # print("current username", username, flush=True)
                         # print("opposite username", hand["username"], flush=True)
                     # we want to find the handler that isn't the current and send it to the other
@@ -493,9 +533,9 @@ def handshake(request, handler):
             # print("this is the comment: ", comment)
                 # need to escape the html of the comment
                 escapedComment = escape_html(comment)
-                db.store_wehsocket_chat(user_from_auth_token_from_cookies, escapedComment)
+                db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
             #  print("this is the escaped comment: ", escapedComment)
-                frameToSend = sendFrames(escapedComment, user_from_auth_token_from_cookies, the_real_payload_length)
+                frameToSend = sendFrames(escapedComment, usernameFromVerifyCookie, the_real_payload_length)
                 # print("the frame we are sending back >>>> ", frameToSend, flush=True)
                 for connections in MyTCPHandler.websocket_connections:
                 
@@ -515,7 +555,7 @@ def handshake(request, handler):
                 for hand in MyTCPHandler.websocket_connections:
                     # print("this is the dict : ", hand,flush=True)
                     # if the username doesn't match we know this is the other user we are trying to connect to
-                    if user_from_auth_token_from_cookies != hand["username"]:
+                    if usernameFromVerifyCookie != hand["username"]:
                         # print("current username", username, flush=True)
                         # print("opposite username", hand["username"], flush=True)
                     # we want to find the handler that isn't the current and send it to the other
@@ -532,7 +572,7 @@ def handshake(request, handler):
                 for hand in MyTCPHandler.websocket_connections:
                     # print("this is the dict : ", hand,flush=True)
                     # if the username doesn't match we know this is the other user we are trying to connect to
-                    if user_from_auth_token_from_cookies != hand["username"]:
+                    if usernameFromVerifyCookie != hand["username"]:
                         # print("current username", username, flush=True)
                         # print("opposite username", hand["username"], flush=True)
                     # we want to find the handler that isn't the current and send it to the other
@@ -550,7 +590,7 @@ def handshake(request, handler):
                 for hand in MyTCPHandler.websocket_connections:
                     # print("this is the dict : ", hand,flush=True)
                     # if the username doesn't match we know this is the other user we are trying to connect to
-                    if user_from_auth_token_from_cookies != hand["username"]:
+                    if usernameFromVerifyCookie != hand["username"]:
                         # print("current username", username, flush=True)
                         # print("opposite username", hand["username"], flush=True)
                     # we want to find the handler that isn't the current and send it to the other
@@ -625,10 +665,10 @@ def handshake(request, handler):
                 # need to escape the html of the comment
                 escapedComment = escape_html(comment)
 
-                db.store_wehsocket_chat(user_from_auth_token_from_cookies, escapedComment)
+                db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
 
             #  print("this is the escaped comment: ", escapedComment)
-                frameToSend = sendFrames(escapedComment, user_from_auth_token_from_cookies, the_real_payload_length)
+                frameToSend = sendFrames(escapedComment, usernameFromVerifyCookie, the_real_payload_length)
          #       print("the length of the frame we are sending back: ".upper(), len(frameToSend), flush=True)
           #      print("the frame we are sending back >>>> ", frameToSend, flush=True)
                 for connections in MyTCPHandler.websocket_connections:

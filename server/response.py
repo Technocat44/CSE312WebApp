@@ -19,12 +19,13 @@ def generate_visit_cookie_response(body, content_type, response_code, num_visits
     r += body
     return r
 
-def generate_auth_token_cookie_response(body, content_type, response_code, num_visits, auth_token) -> bytes:
+def generate_auth_token_cookie_response(body, content_type, response_code, num_visits, auth_token, path) -> bytes:
     r = b'HTTP/1.1 ' + response_code.encode()
     r += b'\r\nContent-Length: ' + str(len(body)).encode() 
     r += b'\r\nContent-Type: ' + content_type.encode()
     r += b'\r\nSet-Cookie: ' + b'visits=' + f'{num_visits}'.encode() + b';Max-Age=7200' 
     r += b'\r\nSet-Cookie: ' + b'auth_token=' + f'{auth_token}'.encode() + b';Max-Age=7200' + b';HttpOnly'
+    r += b'\r\nLocation: ' + path.encode()
     r += b'\r\nX-Content-Type-Options: nosniff'
     r += b'\r\n\r\n'
     r += body

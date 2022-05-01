@@ -110,7 +110,6 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     """
     counter = 0
     websocket_connections = []
-
     # this is creating a bunch of routes and adding them to a route list. Mainly this is used to match
     # an incoming request to a specific path. 
     def __init__(self, request, client_address, server):
@@ -140,9 +139,9 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         # while (len(read_bytes) < contentLen): # should be while I haven't read Content-Length bytes
         MyTCPHandler.counter = MyTCPHandler.counter + 1
    #     print("counter: " + str(MyTCPHandler.counter))
+
         received_data = self.request.recv(1024)
         
-        clients.append(self.client_address[0])
         #   print("\r\n This is the received data straight from the socket \r\n", received_data)
         start = 0
         # cleaner way to look at the received data
@@ -178,7 +177,12 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             read_bytes += self.request.recv(1024)
             # print("this is read_bytes length >>>>>>>>>>>>>>>>>>>>>>", len(read_bytes))
         ##### what to do with read_bytes after we collect them all?
-        ##### create a parse_file function with read_bytes as the parameter
+        ##### create a parse_file function with read_bytes as the parameter\
+        print("/in app.py before I add these are the clients", clients)
+        if self.client_address[0] not in clients:
+            clients.append(self.client_address[0])
+        print("/in app.py after I add these are the clients", clients)
+
         sys.stdout.flush()
         sys.stderr.flush()
         #####################################################

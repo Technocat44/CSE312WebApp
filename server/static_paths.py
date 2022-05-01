@@ -1,5 +1,4 @@
 
-from gettext import find
 from server.router import Route
 from server.response import generate_auth_token_cookie_response, generate_visit_cookie_response, generate_response, redirect
 from server.template_engine import render_template
@@ -10,15 +9,17 @@ from os.path import exists
 import bcrypt
 from server.auth import check_password_match_and_length
 
+old_clients = []
+js_auth_token_intercept_dict = {}
 """
 This method creates a Route object. A route object has a 
     -method >>> the request method such as GET, or POST
     -path   >>> the route the request wants
     -action >>> the callback function to handle the specific route
 """
-logged_in_auth_tokens = {}
 # this method replaces the if-else
 def add_paths(router):
+    router.add_route(Route('GET', '/auth', auth))
     router.add_route(Route('GET', "/hi", hi))
     router.add_route(Route('GET', "/hello", hello))
     router.add_route(Route('GET', "/functions.js", js))
@@ -27,6 +28,10 @@ def add_paths(router):
     router.add_route(Route('GET', "/.", four_oh_four))
     router.add_route(Route('GET', "/", home))
  
+def auth(request, handler):
+    send_file("static/login.html", "text/html; charset=utf-8", request, handler)
+    
+
 def four_oh_four(request, handler):
     r = generate_response(b"Page does not exist","text/plain; charset=utf-8", "404 Not Found")
     handler.request.sendall(r)
@@ -65,8 +70,8 @@ def home(request, handler):
     Set the directive for Expired to be longer than an hour
     
     """
+    
  
-
     print("hey we're home")
     # message = [{"comment": "Whats up", "upload": "", "image_n": "kitten.jpg"},
     #             {"comment": "nothing much", "upload":"", "image_n": "elephant.jpg"},
@@ -84,7 +89,23 @@ def home(request, handler):
     
     print("this is the signincookie username $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$: ", signInCookieUserName)
 
-
+    """
+    When a user opens a new tab they should get a new client id:
+    Idea here is, that if I open another tab I don't want to try to open the websocket and homepage right away
+    and that happens if I authenticate a tab, and then try to open a second one.
+    So what I am doing is saying hey you might have the same cookie because it is stored across the tabs
+    But if youre a different client id, you can't get at the homepage. Unless they referesh, then the client id
+    should be in the old_list and then they can break the socket but thats not a feature i need to worry about
+    """
+    from app import clients
+    for client in clients:
+        print("inside static: these are the clients in client list", client)
+        if client not in old_clients:
+            old_clients.append(client)
+            re=redirect("/auth")
+    if signInCookieUserName == None:
+        re = redirect("/auth")
+        handler.request.sendall(re)
     # if the user just registered and sent in their info, password1 will be a key in the dictionary
 
     """
@@ -162,10 +183,12 @@ def verify_if_signin_cookie_exist(request):
                     if user_or_none != None:
                         # we have a valid auth token! 
                         print("we have a valid user, ", user_or_none, flush=True)
-                        if auth_token not in logged_in_auth_tokens:
-                            logged_in_auth_tokens["user"] = user_or_none
-                            logged_in_auth_tokens["auth_token"] = auth_token
-                            print("in static paths verify cookie,this is logged in auth tokens dict", logged_in_auth_tokens)
+                        print("this is the user", user_or_none)
+                        print("this is the auth_token", auth_token)
+                        # if auth_token not in logged_in_auth_tokens:
+                        #     logged_in_auth_tokens["user"] = user_or_none
+                        #     logged_in_auth_tokens["auth_token"] = auth_token
+                        #     print("in static paths verify cookie,this is logged in auth tokens dict", logged_in_auth_tokens)
                         return user_or_none
                     else:
                         # the auth_token does not match someone is trying to hack!
@@ -179,6 +202,18 @@ def verify_if_signin_cookie_exist(request):
 
     
 def js(request, handler):
+    # this will be the first time the user is requesting this because the user has to login in first
+    # meaning we can create a temporary dictionary that stores the username and password and will be erased after the 
+    # websocket connection is established. 
+    # the js request will have the auth_token set so we can grab it.
+    #
+    # if the dictionary has a username in it already, we want to clear it since this will be a new request for the user
+    if js_auth_token_intercept_dict:
+        js_auth_token_intercept_dict.clear()
+    user_name_from_auth_cookie_intercept = verify_if_signin_cookie_exist(request)
+    print("this is the user name from the auth_cookie intercepted", user_name_from_auth_cookie_intercept)
+    js_auth_token_intercept_dict["username"] = user_name_from_auth_cookie_intercept
+
     send_file("static/functions.js", "text/javascript; charset=utf-8", request, handler) 
 
 def style(request, handler):
