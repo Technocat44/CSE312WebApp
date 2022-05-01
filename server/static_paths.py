@@ -16,6 +16,7 @@ This method creates a Route object. A route object has a
     -path   >>> the route the request wants
     -action >>> the callback function to handle the specific route
 """
+logged_in_auth_tokens = {}
 # this method replaces the if-else
 def add_paths(router):
     router.add_route(Route('GET', "/hi", hi))
@@ -81,7 +82,7 @@ def home(request, handler):
     num_visits = verify_if_visits_cookies_in_headers(request)
     signInCookieUserName =  verify_if_signin_cookie_exist(request) # have this return the username
     
-
+    print("this is the signincookie username $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$: ", signInCookieUserName)
 
 
     # if the user just registered and sent in their info, password1 will be a key in the dictionary
@@ -140,8 +141,9 @@ def verify_if_visits_cookies_in_headers(request) -> int:
 # this function verifies if the auth_token exist and if it does, we verify the token is valid,
 #  then we return the name of the user
 def verify_if_signin_cookie_exist(request):
-    print("we are entering the verify_if_signin_cookie_exist")
+    print("we are entering the verify_if_signin_cookie_exist", flush=True)
     verify_if_cookie_header_exist = request.headers.get("Cookie", -1)
+    print("/inside static verifying if the cookie header exist: ", verify_if_cookie_header_exist)
     if verify_if_cookie_header_exist != -1:
         cookies = request.headers["Cookie"]
         if ";" in cookies:
@@ -154,19 +156,25 @@ def verify_if_signin_cookie_exist(request):
                     auth_token = cookies[equalsIndex + len("="):]
                     # need to verify if the auth_token matches 
                     print("this is the auth_token parsed from the headers: ", auth_token, flush=True)
+                    
                     user_or_none = find_auth_token_in_collection(auth_token)
                     print("user name after validating the auth token in db", user_or_none, flush=True)
                     if user_or_none != None:
                         # we have a valid auth token! 
                         print("we have a valid user, ", user_or_none, flush=True)
+                        if auth_token not in logged_in_auth_tokens:
+                            logged_in_auth_tokens["user"] = user_or_none
+                            logged_in_auth_tokens["auth_token"] = auth_token
+                            print("in static paths verify cookie,this is logged in auth tokens dict", logged_in_auth_tokens)
                         return user_or_none
                     else:
                         # the auth_token does not match someone is trying to hack!
                         print("the auth_token does not match someone is trying to hack!")
                         return None
-        else:
-            # if there is not ; in the cookies, we know there is not auth_token as there has to be a visits cookie set 
-            return None
+    else:
+        # if there is not ; in the cookies, we know there is not auth_token as there has to be a visits cookie set 
+        print("there was no auth token!PPPPPPPPPPPPPPPPPPPPPPPPPPPPP")
+        return None
 
 
     

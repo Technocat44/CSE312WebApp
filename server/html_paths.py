@@ -9,8 +9,9 @@ from server.request import Request, sendBytes, formParser
 import bcrypt
 from server.auth import check_password_match_and_length, generateSalt, generate_new_hashed_password_with_salt, store_auth_token_auth,\
 store_user_and_password, find_user_in_collection, generate_auth_token, generate_hash_for_auth_token
-from server.static_paths import verify_if_visits_cookies_in_headers
+from server.static_paths import verify_if_visits_cookies_in_headers, verify_if_signin_cookie_exist
 from server.template_engine import render_template
+from server.static_paths import logged_in_auth_tokens
 
 def add_paths(router):
     router.add_route(Route('POST', '/image-upload', parseMultiPart))
@@ -59,6 +60,8 @@ def parseLogin(request, handler):
             message = db.list_all_comments()
             # this is grabbing the number of visits a user visited our page
             num_visits = verify_if_visits_cookies_in_headers(request)
+            userFromVerifyCookie = verify_if_signin_cookie_exist(request)
+          
             # means it wasn't a matching password
             # want to render the home page with a passwords do not match warning
             # render template and generate_cookie_response

@@ -4,6 +4,7 @@
 
 from pymongo import MongoClient
 from pymongo import ReturnDocument
+import hashlib
 """
 to check out what is happening in the db follow these steps:
 
@@ -55,6 +56,16 @@ def store_auth_token(auth_token, username):
   print("This is the username we are storing with the auth_token", username, type(auth_token))
   print("this is the auth_token we are storing, ", auth_token, type(auth_token))
   auth_token_collection.insert_one({"auth_token":auth_token, "username": username})
+
+def get_user_via_auth_token(auth_token):
+  hash_of_auth_token_cookie = hashlib.sha256(auth_token.encode()).hexdigest()
+  print("/database hash of auth token cookie", hash_of_auth_token_cookie)
+  userVerifiedFromDB = auth_token_collection.find_one({"auth_token":hash_of_auth_token_cookie.encode()})
+  # this should return a collection object
+  print("in database.py ||| this is the collection object found", userVerifiedFromDB)
+  # if this is none the user is not verified and we do nothing
+  return userVerifiedFromDB
+
 
 def retrieve_auth_token(auth_token):
   print("this is the auth_token from the database.py file : ", auth_token , type(auth_token) ,flush=True)

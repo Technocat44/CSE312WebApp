@@ -18,9 +18,9 @@ class Request:
         self.headers = parse_headers(headers_as_bytes)
       #  print("This is sendBytes() >>>>>>>>>" , sendBytes(), '\n' )
         
-        self.parts = {}
-        self.register = {}
-        self.login = {}
+        self.parts = {} # dict for the image and comments
+        self.register = {} # dict from sign-up
+        self.login = {} # dict from login
 
         """
         After the headers are parsed, we need to take care of the multipart boundary. 
