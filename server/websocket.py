@@ -14,7 +14,7 @@ import json
 import sys
 import time
 
-from server.static_paths import verify_if_signin_cookie_exist, js_auth_token_intercept_dict
+from server.static_paths import verify_if_signin_cookie_exist
 
 """
 --
@@ -45,11 +45,16 @@ Add a path to you server of "GET chat-history" which returns every saves chat me
 The Content-Type of your response should be 'application/json; charset=utf-8'.
 """
 def getChatHistory(request,handler):
-    chat = db.get_wehsocket_chat()
-    print("inside get chat history : this is the chat history", chat)
-    chaty = json.dumps(chat).encode()
-    res = generate_response(chaty, 'application/json; charset=utf-8', "200 OK")
-    handler.request.sendall(res)
+    print("/websockets we are entering getChatHistory", flush =True)
+    vuser = verify_if_signin_cookie_exist(request)
+    if vuser != None:
+        chat = db.get_wehsocket_chat()
+        print("inside get chat history : this is the chat history", chat)
+        chaty = json.dumps(chat).encode()
+        res = generate_response(chaty, 'application/json; charset=utf-8', "200 OK")
+        handler.request.sendall(res)
+    re = generate_response(b"Not validated", 'text/plain;chatset=utf-8', '200 OK')
+    handler.request.sendall(re)
 """
 Websocket parsing:
 Read frames at bit level
@@ -262,7 +267,7 @@ def handshake(request, handler):
     #     handler.request.sendall(generate_response(b"", 'text/plain;charset=utf-8','200 Ok'))
     #     return
     ### this is a collection object not the user    
-    usernameFromVerifyCookie = js_auth_token_intercept_dict["username"].decode()
+    #usernameFromVerifyCookie = js_auth_token_intercept_dict["username"].decode()
    # clientName=js_auth_token_intercept_dict["client"].decode()
     # user_from_auth_token_from_cookies = db.get_user_via_auth_token(logged_in_auth_tokens["auth_token"])
     # print("this is the user collection from the auth token collection", user_from_auth_token_from_cookies)
@@ -275,8 +280,7 @@ def handshake(request, handler):
     #     return 
     #TODO: retrieve auth_token from headers
     # TODO: I am adding the user name to the websocket_connections....maybe I can use the username from there....
-    print("this is username from verify cookie >>>>", usernameFromVerifyCookie)
-    # dictsCount = 0
+  
     # for dicts in MyTCPHandler.websocket_connections:
     #     if dicts["username"] == usernameFromVerifyCookie:
     #         break
@@ -285,6 +289,16 @@ def handshake(request, handler):
     # if dictsCount == len(MyTCPHandler.websocket_connections):
     #     # that means we didn'tfind a match and ending the loop early
     #     # don't add a new dict for the same user
+
+    # if a user is not authenticated they will get a random user name
+    rusername = "User" + str(random.randint(0, 1000))
+
+    # if a user is authed then they will get the username they signed up with
+    verifiedusername = verify_if_signin_cookie_exist(request)
+    if verifiedusername == None:
+        usernameFromVerifyCookie = rusername
+    else:
+        usernameFromVerifyCookie = verifiedusername.decode()
     MyTCPHandler.websocket_connections.append({'username': usernameFromVerifyCookie, 'websocket': handler}) 
    
     while True:
@@ -375,7 +389,10 @@ def handshake(request, handler):
                 # need to escape the html of the comment
                 escapedComment = escape_html(comment)
                 
-                db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
+                #TODO: If the user is not authenticated we dont want to store their chat
+
+                if verifiedusername != None:
+                    db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
 
             #  print("this is the escaped comment: ", escapedComment)
                 # user_from_auth_token_from_cookies = db.get_user_via_auth_token(logged_in_auth_tokens["auth_token"])
@@ -388,10 +405,12 @@ def handshake(request, handler):
                #     print("the connections is a >>>> ",type(connections))
                     handle = connections["websocket"]
                     # I am trying to add a failsafe so the websocket doesnt hang
-                    try:
-                        handle.request.sendall(frameToSend)
-                    except:
-                        None
+                    if verifiedusername != None:
+
+                        try:
+                            handle.request.sendall(frameToSend)
+                        except:
+                            None
                 # print(frameToSend, flush=True)
                 # handler.request.sendall(frameToSend)
                 # print('\n', flush=True)
@@ -533,7 +552,8 @@ def handshake(request, handler):
             # print("this is the comment: ", comment)
                 # need to escape the html of the comment
                 escapedComment = escape_html(comment)
-                db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
+                if verifiedusername != None:
+                    db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, usernameFromVerifyCookie, the_real_payload_length)
                 # print("the frame we are sending back >>>> ", frameToSend, flush=True)
@@ -664,8 +684,8 @@ def handshake(request, handler):
                # print("this is the comment: ", comment, flush =True)
                 # need to escape the html of the comment
                 escapedComment = escape_html(comment)
-
-                db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
+                if verifiedusername != None:
+                    db.store_wehsocket_chat(usernameFromVerifyCookie, escapedComment)
 
             #  print("this is the escaped comment: ", escapedComment)
                 frameToSend = sendFrames(escapedComment, usernameFromVerifyCookie, the_real_payload_length)
@@ -761,6 +781,7 @@ def sendWebRTCFrames(decodedMessage, typeOfMessage):
         return byteArray
 
 def sendFrames(escapedCom, username, payLoadLength):
+    # TODO: validate the user and username here...
     
     messageToSendBack = {'messageType':'chatMessage', 'username': username, 'comment':escapedCom}
     messageToSendBackJSON = json.dumps(messageToSendBack).encode()

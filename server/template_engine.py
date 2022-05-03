@@ -188,11 +188,12 @@ def invalid_password(template, is_password_valid):
     # if the password is not matching, we display the text they need to try again
     elif is_password_valid == -1:
         print("the password lengths dont match")
-        template = template.replace(html_password_matching_tag, "Password needs to be longer than 8 characters try again")
+        template = template.replace(html_password_matching_tag, "Password needs to be longer than 8 characters try again, or the password does not match try again")
         return template
     elif is_password_valid == 0:
         template = template.replace(html_password_matching_tag, "Password do not match try again")
         return template
+
     
 def render_username_if_authenticated(template, username):
     # we want to render the template with the Welcome username displayed

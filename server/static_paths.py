@@ -97,15 +97,15 @@ def home(request, handler):
     But if youre a different client id, you can't get at the homepage. Unless they referesh, then the client id
     should be in the old_list and then they can break the socket but thats not a feature i need to worry about
     """
-    from app import clients
-    for client in clients:
-        print("inside static: these are the clients in client list", client)
-        if client not in old_clients:
-            old_clients.append(client)
-            re=redirect("/auth")
-    if signInCookieUserName == None:
-        re = redirect("/auth")
-        handler.request.sendall(re)
+    # from app import clients
+    # for client in clients:
+    #     print("inside static: these are the clients in client list", client)
+    #     if client not in old_clients:
+    #         old_clients.append(client)
+    #         re=redirect("/auth")
+    # if signInCookieUserName == None:
+    #     re = redirect("/auth")
+    #     handler.request.sendall(re)
     # if the user just registered and sent in their info, password1 will be a key in the dictionary
 
     """

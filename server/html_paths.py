@@ -34,6 +34,9 @@ def parseLogin(request, handler):
     passwordLogin = request.login[b"password"]
     # find username in database
     user = find_user_in_collection(usernameLogin)
+    message = db.list_all_comments()
+    # this is grabbing the number of visits a user visited our page
+    num_visits = verify_if_visits_cookies_in_headers(request)
     print("type of the mongo db user ", type(user), "this is the user: ", user)
     if user:
         # user doesn't exist
@@ -63,9 +66,7 @@ def parseLogin(request, handler):
             # set the auth_token cookie:
 
             password_match = 1
-            message = db.list_all_comments()
-            # this is grabbing the number of visits a user visited our page
-            num_visits = verify_if_visits_cookies_in_headers(request)
+
             # logged_in_auth_tokens["auth_token"] = auth_token
             # logged_in_auth_tokens["user"] = usernameLogin
 
@@ -74,19 +75,22 @@ def parseLogin(request, handler):
             # want to render the home page with a passwords do not match warning
             # render template and generate_cookie_response
             content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, usernameLogin)
-            res = generate_auth_token_cookie_response(content.encode(), "text/html; charset=utf-8", "301 Moved Permanently", num_visits, auth_token, "/")
+            res = generate_auth_token_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits, auth_token)
             handler.request.sendall(res)
-            re = redirect("/")
+            
         else:
-            re = redirect("/")
-            handler.request.sendall(re)
-    elif user != None:
-        re = redirect("/")
-        handler.request.sendall(re)
+            password_match = 0
+            content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, username=None)
+            res = generate_visit_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
+            handler.request.sendall(res)
+    else:
+        password_match = -1
+        content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, username=None)
+        res = generate_visit_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
+        handler.request.sendall(res)
 
             
-    r = redirect("/")
-    handler.request.sendall(r)
+
 
 def parseRegistration(request, handler):
     print("i am inside of parseRegistration")
@@ -98,7 +102,9 @@ def parseRegistration(request, handler):
     1. generate some salt
     
     """
-
+    message = db.list_all_comments()
+    # this is grabbing the number of visits a user visited our page
+    num_visits = verify_if_visits_cookies_in_headers(request)
     """
         if password_match is -1 password is less than 8 characters try again
         if password_match is 0 we know they are trying to register but the passwords dont match
@@ -141,9 +147,9 @@ def parseRegistration(request, handler):
         store_user_and_password(hashedSaltedPassword, request.register[b"userName"], salt)
         signedUp = 2
         # I could create a signup cookie that saves the state that the user signed up. it would only happen in this func
-
-        r = redirect("/")
-        handler.request.sendall(r)
+        content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, username=None )
+        res = generate_visit_cookie_response(content.encode(), "text/html; charset=utf-8", "200 Ok", num_visits)
+        handler.request.sendall(res)
 
 def parseMultiPart(request, handler):
     print('\n\n\n\n\n')
