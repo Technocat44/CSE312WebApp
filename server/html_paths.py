@@ -32,8 +32,10 @@ def parseLogin(request, handler):
 
     usernameLogin = request.login[b"userName"]
     passwordLogin = request.login[b"password"]
+    user = request.login[b"userName"].decode()
+    escapedUser = escape_html(user)
     # find username in database
-    user = find_user_in_collection(usernameLogin)
+    user = find_user_in_collection(escapedUser.encode())
     message = db.list_all_comments()
     # this is grabbing the number of visits a user visited our page
     num_visits = verify_if_visits_cookies_in_headers(request)
@@ -139,12 +141,14 @@ def parseRegistration(request, handler):
         • Randomly generate salt, appended to password
         • Hash the salted password
         """
-        
+        user = request.register[b"userName"].decode()
+        escapedUser = escape_html(user)
+       
         salt = generateSalt()
         print("this is the random salt: ", salt)
         hashedSaltedPassword = generate_new_hashed_password_with_salt(salt, request.register[b"password1"])
         print("this is the hashed salted password: ", hashedSaltedPassword)
-        store_user_and_password(hashedSaltedPassword, request.register[b"userName"], salt)
+        store_user_and_password(hashedSaltedPassword, escapedUser.encode(), salt)
         signedUp = 2
         # I could create a signup cookie that saves the state that the user signed up. it would only happen in this func
         content = render_template("static/index.html",{"loop_data": message}, num_visits, password_match, username=None )
